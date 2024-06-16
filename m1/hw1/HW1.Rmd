@@ -1,0 +1,179 @@
+---
+title: "HW1"
+author: "chandl71@purdue.edu"
+date: "2024-06-16"
+output: html_document
+---
+
+```{r setup}
+le <- read.csv("./life_expectancy.csv")
+X <- le$Medical.doctors
+Y <- le$X2015Life.expectancy
+```
+
+# Problem 1
+
+Estimate the parameters ($\beta_0$, and $\beta_1$) for a linear regression to predict $Y$ based on $X$. Complete the following with details.
+
+## 1.a
+
+```{r}
+Xbar <- mean(X)
+```
+
+$\bar{X} = `r Xbar`$
+
+## 1.b
+
+```{r}
+Ybar <- mean(Y)
+```
+
+$\bar{Y} = `r Ybar`$
+
+## 1.c
+
+```{r}
+sum_mean_diff_xy = sum((X - Xbar) * (Y - Ybar))
+```
+
+$\sum(X_i - \bar{X})(Y_i - \bar{Y}) = `r sum_mean_diff_xy`$
+
+## 1.d
+
+```{r}
+sum_mean_sq_diff_x = sum((X - Xbar)^2)
+```
+
+$\sum(X_i - \bar{X})^2 = `r sum_mean_sq_diff_x`$
+
+## 1.e
+
+Start with $b_1$ calculation since $b_0$ can be easily calculated from there:
+
+$$
+b_1 = \frac{\sum(X_{i} - \bar{X})(Y_{i} - \bar{Y})}{\sum(X_{i}-\bar{X})^{2}}
+$$
+
+```{r}
+b1 = sum_mean_diff_xy / sum_mean_sq_diff_x
+```
+
+Now calculate $b_0$ using $b_1$:
+
+$$
+b_{0} = \bar{Y} - b_{1} \bar{X}
+$$
+
+```{r}
+b0 = Ybar - b1 * Xbar
+```
+
+$b_0 = `r b0`$
+
+## 1.f
+
+Using previously calculated value for $b_1$:
+
+$b_1 = `r b1`$
+
+## 1.g
+
+First, calculate $\hat{Y}$:
+
+$$
+\mathbf{\hat{Y}} = b_0 + b_1 * \mathbf{X}
+$$
+
+``` {r}
+Yhat <- b0 + b1 * X
+```
+
+then proceed with $SSE$:
+
+```{r}
+sse = sum((Y - Yhat)^2)
+```
+
+$SSE = \sum(Y_i - \hat{Y})^2 = `r sse`$
+
+## 1.h
+
+```{r}
+n = length(X)
+dfe = n - 2
+```
+
+We have `r dfe` degrees of freedom of error, and we already know $SSE$, so
+
+```{r}
+mse = sse / dfe
+```
+
+$MSE = \frac{SSE}{DFE} = `r mse`$
+
+## 1.i
+```{r}
+sst = sum((Y - Ybar)^2)
+```
+
+$SSE = \sum(Y_i - \bar{Y})^2 = `r sst`$
+
+## 1.j
+```{r}
+ssr = sum((Ybar - Yhat)^2)
+```
+
+$SSR = \sum(\bar{Y} - \hat{Y}_i)^2 = `r ssr`$
+
+To determine whether the two sides of the equation $SST = SSR + SSE$ are equal, we will compare their absolute difference against a very small threshold:
+
+```{r}
+thresh = 1e-10
+abs(sst - (ssr + sse)) < thresh
+```
+
+Since the above is true, the values are close enough for us to consider them equal.
+
+# Problem 2
+
+Obtain t-values at $\alpha = 0.1, 0.05$ using the $n - 2 = `r dfe`$ degrees of freedom for this problem:
+
+``` {r}
+t_0.1 = qt(1 - 0.1 / 2, df = dfe)
+t_0.05 = qt(1 - 0.05 / 2, df = dfe)
+```
+
+Next, obtain the standard error of the estimation $s{b_1}$ and use it to obtain the margin of error for each $t$ value:
+
+``` {r}
+stderr_b1 = sqrt(mse / sum_mean_sq_diff_x)
+me_0.1 = t_0.1 * stderr_b1
+me_0.05 = t_0.05 * stderr_b1
+```
+
+In order to estimate the linear impact of $X$ on $Y$, at a confidence of $(1 − \alpha)%$, you should use the critical
+value, or the $t$ value denoted as $t(1 - \alpha / 2, n - 2)$, which has a value of `r t_0.1` at $\alpha = 0.1$, and `r t_0.05` at $\alpha = 0.05$. The standard error of the estimation is:
+$$
+s{b_1} = \sqrt{\frac{MSE}{\sum(X_i - \bar{X})^2}} = `r stderr_b1`
+$$
+The margin error, or $t \cdot SE$, of the confidence interval is `r me_0.1` at $\alpha = 0.1$, and `r me_0.05` at $\alpha = 0.05$.
+
+# Problem 3
+Perform a hypothesis test on the linear impact of $X$ on $Y$, with a $t$ test with a significant value of $0.1$.
+
+TODO DEFINE H0 Ha
+
+We assume the use of a two-sided test against 0, and we define our test statistic as:
+
+$$
+t^\star = \frac{(b_1 - 0)}{s{b_1}} 
+$$
+
+```{r}
+t_star = b1 / stderr_b1
+```
+
+$t^\star = `r t_star`$, so we need to compare this to the $t$ value for $\alpha = 0.1$, which was calculated in the previous problem as $t(1 - \frac{0.1}{2}, n - 2) = `r t_0.1`$.
+
+Since $t^\star = `r t_star` > `r t_0.1`$
