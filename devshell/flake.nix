@@ -22,13 +22,15 @@
             #   ];
             # }
 
-            # pkgs.rPackages.alr4
-            # pkgs.rPackages.leaps
-            # pkgs.rPackages.SuppDists
-            # pkgs.rPackages.rmarkdown
+            pkgs.R
+            pkgs.rPackages.languageserver
+            pkgs.rPackages.alr4
+            pkgs.rPackages.leaps
+            pkgs.rPackages.SuppDists
+            pkgs.rPackages.rmarkdown
             pkgs.rstudio
-            # pkgs.texliveFull
-            # pkgs.pandoc
+            pkgs.texliveFull
+            pkgs.pandoc
           ];
         };
 
