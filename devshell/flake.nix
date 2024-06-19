@@ -12,7 +12,7 @@
       # rstudio = pkgs.rstudio;
     in {
         devShells.x86_64-linux.default = pkgs.mkShell {
-          packages = [ 
+          nativeBuildInputs = [ 
             # pkgs.rWrapper.override {
             #   packages = [
             #     pkgs.rPackages.alr4
