@@ -31,6 +31,7 @@
             pkgs.rstudio
             pkgs.texliveFull
             pkgs.pandoc
+            pkgs.zathura
           ];
         };
 
