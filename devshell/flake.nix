@@ -28,7 +28,8 @@
             pkgs.rPackages.leaps
             pkgs.rPackages.SuppDists
             pkgs.rPackages.rmarkdown
-            pkgs.rstudio
+            pkgs.rPackages.ggplot2
+            # pkgs.rstudio
             pkgs.texliveFull
             pkgs.pandoc
             pkgs.zathura

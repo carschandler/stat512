@@ -1,8 +1,8 @@
 ---
-title: "HW1"
+title: "HW2"
 author: "Robert Chandler"
 email: "chandl71@purdue.edu"
-date: "2024-06-16"
+date: "2024-06-23"
 output:
   pdf_document: default
   html_document: default
@@ -14,503 +14,355 @@ Begin by reading the dataset for this set of problems:
 le <- read.csv("./life_expectancy.csv")
 ```
 
-# Problem 1
-
-Estimate the parameters ($\beta_0$, and $\beta_1$) for a linear regression to predict $Y$ based on $X$. Complete the following with details.
-
-First, set $X, Y$:
-
 ```{r}
 x <- le$Nurses
 y <- le$X2015Life.expectancy
 ```
 
-## 1.a
-
-```{r}
-Xbar <- mean(X)
-```
-
-$\bar{X} = \frac{1}{n} \sum X_i = `r Xbar`$
-
-## 1.b
-
-```{r}
-Ybar <- mean(Y)
-```
-
-$\bar{Y} = \frac{1}{n} \sum Y_i = `r Ybar`$
-
-## 1.c
-
-```{r}
-ss_xy = sum((X - Xbar) * (Y - Ybar))
-```
-
-$\sum(X_i - \bar{X})(Y_i - \bar{Y}) = `r ss_xy`$
-
-## 1.d
-
-```{r}
-ss_x = sum((X - Xbar)^2)
-```
-
-$\sum(X_i - \bar{X})^2 = `r ss_x`$
-
-## 1.e
-
-Start with $b_1$ calculation since $b_0$ can be easily calculated from there:
-
-$$
-b_1 = \frac{\sum(X_{i} - \bar{X})(Y_{i} - \bar{Y})}{\sum(X_{i}-\bar{X})^{2}}
-$$
-
-```{r}
-b1 = ss_xy / ss_x
-```
-
-Now calculate $b_0$ using $b_1$:
-
-$$
-b_{0} = \bar{Y} - b_{1} \bar{X}
-$$
-
-```{r}
-b0 = Ybar - b1 * Xbar
-```
-
-$b_0 = `r b0`$
-
-## 1.f
-
-Using previously calculated value for $b_1$:
-
-$b_1 = `r b1`$
-
-## 1.g
-
-First, calculate $\hat{Y}$:
-
-$$
-\mathbf{\hat{Y}} = b_0 + b_1  \mathbf{X}
-$$
-
-```{r}
-Yhat <- b0 + b1 * X
-```
-
-then proceed with $SSE$:
-
-```{r}
-sse = sum((Y - Yhat)^2)
-```
-
-$SSE = \sum(Y_i - \hat{Y})^2 = `r sse`$
-
-## 1.h
-
-```{r}
-n = length(X)
-dfe = n - 2
-```
-
-We have `r dfe` degrees of freedom of error, and we already know $SSE$, so
-
-```{r}
-mse = sse / dfe
-```
-
-$MSE = \frac{SSE}{DFE} = `r mse`$
-
-## 1.i
-
-```{r}
-sst = sum((Y - Ybar)^2)
-```
-
-$SST = \sum(Y_i - \bar{Y})^2 = `r sst`$
-
-## 1.j
-
-```{r}
-ssr = sum((Ybar - Yhat)^2)
-```
-
-$SSR = \sum(\bar{Y} - \hat{Y}_i)^2 = `r ssr`$
-
-To determine whether the two sides of the equation $SST = SSR + SSE$ are equal, we will compare their absolute difference against a very small threshold:
-
-```{r}
-thresh = 1e-10
-
-abs(sst - (ssr + sse)) < thresh
-```
-
-Since the condition above is true, the values are close enough for us to consider them equal.
-
 # Problem 2
+For a two-sided hypothesis test on the significance of the linear correlation coefficient between $X$ and $Y$, $H_0: \rho = 0, H_a: \rho \ne 0$...
 
-## Calculations
+## 2.a
+If a T-test is used, the test statistic is computed with the sample correlation, $r$, with the formula
 
-Obtain t-values at $\alpha = 0.1, 0.05$ using the $n - 2 = `r dfe`$ degrees of freedom for this problem:
+
+$$
+t^{*} = \frac{r \sqrt{ n-2 }}{\sqrt{ 1 - r^{2} }}
+$$
+
+which is computed as
 
 ```{r}
-t_0.1 = qt(1 - 0.1 / 2, df = dfe)
-t_0.05 = qt(1 - 0.05 / 2, df = dfe)
+r <- cor(x, y)
+n <- length(x)
+t_star <- r * sqrt(n - 2) / sqrt(1 - r^2)
 ```
 
-Next, obtain the standard error of the estimation $s\{b_1\}$ and use it to obtain the margin of error for each $t$ value:
+$$
+t^{*} = \frac{`r r` \sqrt{ `r n`-2 }}{\sqrt{ 1 - `r r`^{2} }}
+= `r t_star`
+$$
+
+The critical t-value is
 
 ```{r}
-stderr_b1 = sqrt(mse / ss_x)
-me_0.1 = t_0.1 * stderr_b1
-me_0.05 = t_0.05 * stderr_b1
+t_crit <- qt(1 - alpha / 2, n - 2)
 ```
 
-## Answers
+$$
+t(1 - \alpha / 2, n - 2) = t(`r 1 - alpha / 2`, `r n - 2`) = `r t_crit` <
+`r t_star` = t^*
+$$
 
-In order to estimate the linear impact of $X$ on $Y$, at a confidence of $100(1 - \alpha)\%$, you should use the critical value, or the $t$ value denoted as $t(1 - \alpha / 2, n - 2)$, which has a value of `r t_0.1` at $\alpha = 0.1$, and `r t_0.05` at $\alpha = 0.05$. The standard error of the estimation is: $$
-s\{b_1\} = \sqrt{\frac{MSE}{\sum(X_i - \bar{X})^2}} = `r stderr_b1`
-$$ The margin error, or $t \cdot SE$, of the confidence interval is `r me_0.1` at $\alpha = 0.1$, and `r me_0.05` at $\alpha = 0.05$.
+so we can reject $H_0$ and conclude that $X, Y$ are linearly associated.
+
+## 2.b
+Is this test statistic the same as the t-test in part (a)? **YES**.
+
+## 2.c
+Discuss when the results of the hypothesis test on the linear impact and the linear
+association are equivalent. 
+
+Tests on linear impact and linear association are equivalent when the
+population is bivariate normal, but the regression model still holds even if
+they are not bivariate normal, so long as the conditional distributions
+$Y_i|X_i$ are normal and independent, with conditional means $\beta_0 + \beta_1
+X_i$ and conditional variance $\sigma^2$ and the $X_i$ are independent random
+variables whose distribution does not depend on $\beta_0, \beta_1, \sigma^2$. In
+this case, the results of the hypothesis tests are still equivalent.
+
+## 2.d
+Use R to compute a 95% confidence interval for the linear correlation
+coefficient between $Y$ and $X$. Use the confidence interval to verify the
+hypothesis test in (c). (hint: if the confidence interval contains the
+hypothesized value, then the two-sided hypotheses should be rejected or not?) 
+
+We need to transform our data using a Fisher z transformation:
+
+$$
+\begin{aligned}
+z' &= \frac{1}{2} log_e(\frac{1 + r_{12}}{1 - r_{12}}) \\
+\sigma ^2 \{z'\} &= \frac{1}{n-3}
+\end{aligned}
+$$
+
+
+```{r}
+alpha <- 0.05
+z_prime <- 0.5 * log((1 + r) / (1 - r))
+sigma_z_prime <- 1 / sqrt(n - 3)
+z <- qnorm(1 - alpha / 2)
+z_prime_upper <- z_prime + z * sigma_z_prime
+z_prime_lower <- z_prime - z * sigma_z_prime
+r_upper <- (exp(2 * z_prime_upper) - 1) / (exp(2 * z_prime_upper) + 1)
+r_lower <- (exp(2 * z_prime_lower) - 1) / (exp(2 * z_prime_lower) + 1)
+```
+
+The transformed confidence interval for $\rho$ is then
+
+$$
+z' \pm z(1 - \alpha/2) \sigma\{z'\} = 
+`r z_prime` \pm z(1 - `r alpha`/2) `r sigma_z_prime` =
+(`r z_prime_upper`, `r z_prime_lower`)
+$$
+
+and transforming back using $r = (e^{2z'} - 1) / (e^{2z'} + 1)$, the final
+interval is
+
+$$
+(`r r_upper`, `r r_lower`)
+$$
+
+and since $r = 0$ does not fall within this interval, we reject $H_0$ and
+conclude that the data are linearly associated.
 
 # Problem 3
+Consider a simple linear regression model with $Y \sim X$ on the following table. Practice doing the lack-of-fit by hand.
 
-Perform a hypothesis test on the linear impact of $X$ on $Y$, with a $t$ test with a significant value of $0.1$.
+```{r}
+library(knitr)
+data_p3 <- data.frame(
+  x = c(0.24, 0.22, 0.23, 0.24, 0.24, 0.24, 0.22, 0.21, 0.24, 0.21),
+  y = c(16, 40, 32, 13, 1, 1, 2, 3, 8, 14)
+)
+x <- data_p3$x
+y <- data_p3$y
+kable(df, caption = "Problem 3 Dataset")
+```
 
-The "linear impact" of $X$ on $Y$ refers to the change in $Y$ attributed to a change in $X$, which is just the slope of the regression line, $\beta_1$. We assume the use of a two-sided test against $\beta_1^* = 0$ since we lack any other information to form our hypotheses, so:
+## 3.a
+
+Based on a (R-generated) scatter plot of $X$ and $Y$ with the regression line,
+comment on whether the Simple Linear Regression (SLR) exhibits a lack-of-fit
+issue. 
+
+Plot the SLR curve of $Y$ regressed on $X$:
+
+```{r fig.cap =  "Simple Linear Regression of $Y \\sim X$"}
+model <- lm(y ~ x)
+plot(y ~ x)
+abline(model)
+```
+<!-- ggplot(data_p3, aes(x = x, y = y)) + -->
+<!--   geom_point() + -->
+<!--   stat_smooth(method = lm, se = FALSE, ) + -->
+<!--   labs(caption = "Simple Linear Regression of $Y \\sim X$") -->
+
+This is a difficult case to judge at a first glance. First of all, we note that
+$X$ does not seem to have much of an impact on $Y$. Regarding the goodness of
+fit, the points do seem to have a decent amount of scatter about the line, but
+this could just imply a high variance in the error. It does not necessarily seem
+that a linear model is incorrect, but it is still tough to judge by eye, so
+this is a great use case for the lack-of-fit test.
+
+## 3.b
+Compute the components for the lack of fit test: $c$, $\hat{Y}_i$, $\bar{Y}_i$,
+$\bar{Y}$, $SSPE$, $SSLF$, $SSE$, $DFPE$, $DFLF$, $DFE$.
+
+Extract coefficients from the model first:
+
+
+```{r}
+b0 <- model$coefficients[["(Intercept)"]]
+b1 <- model$coefficients[["x"]]
+```
+
+Compute requested values:
+
+```{r}
+n <- length(x)
+
+df_unq <- aggregate(y ~ x, data_p3, mean)
+colnames(df_unq)[2] <- "ybar"
+
+c <- length(df_unq$x)
+df_unq$yhat <- sapply(df_unq$x, function(x) b0 + b1 * x)
+
+ybar_overall <- mean(y)
+
+# Build up SS values iteratively
+sspe <- 0
+sslf <- 0
+sse <- 0
+for (i in seq_along(y)) {
+  # Find the ybar and yhat values associated with the current y... this takes
+  # care of the summation across the i index since these are already
+  # pre-calculated
+  ybar_i <- df_unq$ybar[df_unq$x == x[i]]
+  yhat_i <- df_unq$yhat[df_unq$x == x[i]]
+
+  # This is good, but FIXME on yhat
+  spe <- (y[i] - ybar_i)^2
+  sspe <- sspe + spe
+
+  slf <- (ybar_i - yhat_i)^2
+  sslf <- sslf + slf
+
+  se <- (y[i] - yhat_i)^2
+  sse <- sse + se
+}
+
+# Ensure SSPE + SSLF = SSE
+stopifnot(sspe + sslf - sse < 1e-10)
+
+dfpe <- n - c
+dflf <- c - 2
+dfe <- n - 2
+```
+
+The resulting values are:
+
+$$
+\begin{aligned}
+c &= `r c` \\
+\hat{Y}_i &= `r df_unq$yhat` \\
+\bar{Y}_i &= `r df_unq$ybar` \\
+\bar{Y} &= `r ybar_overall` \\
+SSPE &= \sum \sum (Y_{ij} - \bar{Y}_i)^2 = `r sspe` \\
+SSLF &= \sum \sum (\bar{Y}_i - \hat{Y}_{ij})^2 = `r sslf` \\
+SSE &= \sum \sum (Y_{ij} - \hat{Y}_ij)^2 = `r sse` \\
+DFPE &= `r dfpe` \\
+DFLF &= `r dflf` \\
+DFE &= `r dfe` \\
+\end{aligned}
+$$
+
+## 3.c
+
+Next, consider the lack-of-fit test for the SLR. Define $H_0, H_a$, calculate
+test statistic, define reject region, compute the p-value, and state the
+conclusion. 
+
+The hypotheses are as follows:
 
 $$
 \begin{gathered}
-H_0: \beta_1 = 0 \\
-H_a: \beta_1 \ne 0
+H_0: E\{ Y \} = \beta_0 + \beta_1 X \\
+H_a: E\{ Y \} \ne \beta_0 + \beta_1 X \\
 \end{gathered}
 $$
 
-and we define our test statistic as:
-
-$$
-t^* = \frac{(b_1 - 0)}{s\{b_1\}} 
-$$
-
-We will reject $H_0$ if the $p$ value of the 2-sided test is less than $\alpha = 0.1$, which is equivalent to the condition $|t^*| > t(1-\frac{\alpha}{2}, n - 2)$
+The test statistic is
 
 ```{r}
-t_star = b1 / stderr_b1
+mslf <- sslf / (c - 2)
+mspe <- sspe / (n - c)
+f_star <- mslf / mspe
 ```
 
-$t^* = `r t_star`$, so we need to compare this to the $t$ value for $\alpha = 0.1$, which was calculated in the previous problem as $t(1 - \frac{0.1}{2}, `r dfe`) = `r t_0.1`$.
+$$
+F^* = \frac{SSE - SSPE}{(n - 2) - (n - c)} \div \frac{SSPE}{n - c} = \frac{SSLF}{c - 2} \div \frac{SSPE}{n - c} = \frac{`r sslf`}{`r c` - 2} \div \frac{`r sspe`}{`r n` - `r c`} = `r f_star`
+$$
 
-Since $|t^*| = `r t_star` > `r t_0.1` = t(1 - \frac{0.1}{2}, `r dfe`)$, this $t$ value falls in the rejection region.
-
-To double-check, we can calculate the $p$ value for this:
+and the critical $F$ value is
 
 ```{r}
-p = 2 * (1 - pt(t_star, dfe))
+f_crit <- qf(1 - alpha, c - 2, n - c)
 ```
 
-$p \approx `r p` \ll 0.1 = \alpha$, which confirms that we should reject $H_0$.
+$$
+F(1 - \alpha; c-2, n-c) = `r f_crit`
+$$
 
-In conclusion, there is an extremely low chance of observing the data in this dataset under the assumption that there is no linear impact of $X$ on $Y$, so we can say that a change in $X$ value brings about a statistically significant impact on the linear change in $Y$.
+The rejection region is:
+
+$$
+\begin{aligned}
+\text{If } F^* &\le F(1 - \alpha; c-2, n-c)\text{, fail to reject } H_0 \\
+\text{If } F^* &> F(1 - \alpha; c-2, n-c)\text{, reject } H_0
+\end{aligned}
+$$
+
+The p-value is
+
+```{r}
+p_f_star <- 1 - pf(f_star, c - 2, n - c)
+```
+
+$$
+p = P\{F(c-2, n - c) > F^*\} = P\{F(`r c-2`, `r n - c`) > `r f_star`\} =
+`r p_f_star`
+$$
+
+so, because $F^*$ and $p$ both fall outside of the rejection region, we fail to
+reject $H_0$, and we conclude that **the model does not have a lack-of-fit
+problem** at $\alpha = 0.05$.
+
+## 3.d
+
+Utilize R to conduct the lack-of-fit test and identify as many components as
+possible from the ones computed in part (b) in the R output.
+
+Our hand-calculated values above are validated in the ANOVA table below:
+
+```{r}
+anova(model, lm(y ~ as.factor(x), data_p3))
+```
+
+The values for $SSE$ and $SSPE$ are readily found in the first and second rows
+of the `RSS` column, respectively, and $SSLF$ is in the `Sum of Sq` column. The
+different DOF values are all in the table: $DFE$ and $DFPE$ are in the first and
+second rows of the `Res.Df` column, respectively, and $DFLF$ is in the `Df`
+column. $c$ can be found indirectly from $c = 2 + DFLF$. The rest of the values
+in [3.b] are derived from $Y$ and are not shown in the table.
+
+# TODO: make sure to double check hand-typed numbers from tables in p3,4
 
 # Problem 4
 
-Use R to obtain a summary of this SLR model. Highlight the following concepts on the output, the notation, the values, and finally an interpretation.
-
-We can summarize the model using `lm()`:
+Consider a lack of fit test on the following data on Y ~ X:
 
 ```{r}
-model <- lm(Y ~ X)
-summary(model)
+data_p4 <- data.frame(
+  x = c(0.19, 0.44, 0.35, 0.32, 0.29),
+  y = c(65, 30, 22, 31, 9)
+)
+kable(data_p4)
 ```
 
-We will use these results to describe the following:
+# 4.a
 
-## 4.a
+Can you perform a lack of fit test on this data?
 
-The standard error of the point estimate of the linear impact of $X$ on $Y$:
+As the data currently stands, a lack of fit test cannot be performed on it
+because there are no replicate values in $X$. However, we can create a kind of
+pseudo-replicate dataset by grouping the data if we needed to perform the test
+and could not gather any new samples.
 
-The point estimate of the linear impact of $X$ on $Y$ is $b_1$. The standard error of $b_1$ estimates the standard deviation of the sampling distribution of $b_1$. This is the "spread" of the values we would get when repeatedly sampling $b_1$ while holding the level of $X$ constant, and its value is shown under the `Coefficients` section of the summary above, at the intersection of the `Std. Error` column and the row labeled `X`. It has a value of `r summary(model)$coefficients["X", "Std. Error"]`, which agrees with the value calculated manually in [Problem 2].
+# 4.b
 
-## 4.b {#b-1}
+Suppose a new row is added: X 0.19, Y 59 and the sample size is now 6. Before,
+the $SSPE$ was simply $0$ because we had no replicates, and now it is just a
+function of the $X=0.19$ terms:
 
-The residual standard error:
+```{r}
+data_p4 <- rbind(data_p4, c(0.19, 59))
+y_i <- data_p4[data_p4$x == 0.19, "y"]
+sspe <- sum(sapply(y_i, function(y) (y - mean(y_i))^2))
+```
 
-The residuals are the differences between the point predictions $\hat{Y}_i$ and the observed $Y_i$ values. The residual standard error estimates the standard deviation of these residuals, or how much spread we expect to see on the residuals. It is notated as $s$ and can be found by taking the square root of $s^2$, also known as the MSE. It can be found under the heading `Residual standard error` in the summary above and it has a value of `r summary(model)$sigma`.
+$$
+SSPE = (Y_{ij} - \bar{Y}_i)^2 = `r sspe`
+$$
+
+so $SSPE$ has **increased** by $`r sspe`$.
+
+```{r}
+n <- nrow(data_p4)
+c <- length(unique(data_p4$x))
+dfpe <- n - c
+dflf <- c - 2
+```
+
+$DFPE = n - c = `r dfpe`$ and $DFLF = c - 2 = `r dflf`$.
 
 ## 4.c
-
-The degree of freedom of the residual:
-
-The degrees of freedom of the residual, sometimes notated $DFE$ (degrees of freedom of error), can be found in the summary above on the same line as the residual standard error, under the `Residual standard error` heading, where it notes on how many degrees of freedom that value is. In this case, it has a value of `r df.residual(model)`, which is equal to $n - 2$.
-
-## 4.d
-
-The mean square of the standard error:
-
-The mean square error, notated $MSE$ or $s^2$, is closely related to the residual standard error discussed above. It is another measure of the spread of the residual values, but it is equal to the residual standard error squared, and can be calculated by taking the sum of each residual value squared and dividing by the degrees of freedom. It is minimized by the least squares solution. It is not explicitly shown in the summary above, but can easily be calculated by squaring the residual standard error from [4.b](#b-1). Alternatively, it can be found by calling the `anova()` function on the model returned by `lm()`:
-
-```{r}
-anova(model)
-```
-
-where it is found at the intersection of the `Residuals` row and the `Mean Sq` column. It has a value of `r anova(model)["Residuals", "Mean Sq"]`.
-
-## 4.e
-
-The standard deviation of the dependent variable $Y$, denoted by $s_y$, and briefly explain how it is related to the total sum of variance, $SST = \sum(Y_i - \bar{Y})^2$:
-
-The (sample) standard deviation of $Y$ is denoted $s_y$ and it describes the variation in the observed $Y_i$ values about their mean. It is related to $SST$ by the following equation:
-
-$$
-s_y = \sqrt{\frac{\sum(Y_i - \bar{Y})^2}{n - 1}} = \sqrt{\frac{SST}{n - 1}}
-$$
-
-so as $SST$ increases/decreases, so does $s_y$. It is not readily available in the model summary, but it can be derived using the information in the `anova()` table above by summing the rows in the `Sum Sq` column, which yields $SST$, and then dividing by the sum of the rows in the `Df` column and taking the square root of the result. Thus, it has a value of $s_y = `r sqrt(sst/(n-1))`$.
-
-# Problem 5
-
-## 5.a
-
-The tendency, or the form by which of the response variable, $Y$, varies with $X$ can be estimated with a linear function (**TRUE**). The linear function has a true form of $\beta_0 + \beta_1X$ in the population domain.
-
-## 5.b
-
-At a general $X = X_h$ level, the predicted value is estimated by $\beta_0 + \beta_1 X_h$. Both $\beta_0$ and $\beta_1$ are variables and can be estimated by $b_0$ and $b_1$ on a sample (**FALSE**).
-
-## 5.c
-
-The deviation between the actual response variable $Y$ and the predicted $Y$, or $\hat{Y}$ at a given $X = X_h$ level is called the random error and is denoted by $\varepsilon$, which can be estimated with a value denoted by $e$ in a sample.
-
-## 5.d
-
-This random error is assumed to have a distribution of $N(0, \sigma ^2)$ (**TRUE**), where the standard deviation, $\sigma$, can be estimated by the standard error term denoted by $s$ computed from a sample.
-
-## 5.e
-
-The actual response variable, $Y = \beta_0 + \beta_1 X + \varepsilon$, represents the linear relationship between $X$ and $Y$. The two “ingredients” in this relationship can be identified as $\beta_0 + \beta_1 X$ and $\varepsilon$.
-
-# Update $X$
-
-For the remaining problems, we consider $X$ to be the number of nurses and midwives rather than doctors.
-
-```{r}
-```
-
-# Problem 6
-
-Use a significance level of 0.05, or confidence level of 0.95, and suppose the prediction is made at $X_h$ = the mean of $X$, or $\bar{X}$. Complete the confidence interval questions.
-
-First, compute necessary calculations for the confidence interval:
-
-```{r}
-alpha = 0.05
-Xbar = mean(X)
-model <- lm(Y ~ X)
-b0 = coef(model)[[1]]
-b1 = coef(model)[[2]]
-Yhat_h = b0 + b1 * Xbar
-mse = anova(model)["Residuals", "Mean Sq"]
-std_err_mean = sqrt(mse * (1/n + 0))
-t_star = qt(1 - alpha / 2, n - 2)
-std_err_pred = sqrt(mse + std_err_mean^2)
-m = 3
-std_err_predmean = sqrt(mse / m + std_err_mean^2)
-```
-
-## 6.a
-
-To estimate the mean response value of $Y$, the point estimate can be estimated as
-
-$$
-\hat{Y}_h = b_0 + b_1 X_h = `r b0` + `r b1` \cdot `r Xbar` = `r Yhat_h`
-$$
-
-The standard error of this estimation is denoted as the formula
-
-$$
-s\{\hat{Y}_h\} = \sqrt{MSE\left[ \frac{1}{n} + \frac{(X_h - \bar{X})^2}{\sum(X_i - \bar{X})^2}  \right]} = \sqrt{`r mse` \left[ \frac{1}{`r n`} + \frac{(`r Xbar` - `r Xbar`)^2}{\sum(X_i - `r Xbar`)^2}  \right]}
-$$ and computed as `r std_err_mean`.
-
-The t-value is denoted by
-
-$$
-t(1 - \alpha/2, n-2) = t(1 - `r alpha` / 2, `r n` - 2)
-$$ and computed as `r t_star`.
-
-Therefore, the confidence interval for this mean response is
-
-$$
-\begin{aligned}
-\hat{Y}_h \pm t(1-\alpha/2, n-2) s\{\hat{Y}_h\} &= `r Yhat_h` \pm `r t_star` \cdot `r std_err_mean` \\
-&= `r Yhat_h` \pm `r t_star * std_err_mean` \\
-&= (`r Yhat_h - t_star * std_err_mean`, `r Yhat_h + t_star * std_err_mean`)
-\end{aligned}
-$$
-
-## 6.b
-
-To predict the single response (the next observation value), the point estimate can be estimated as
-
-$$
-\hat{Y}_h = b_0 + b_1 X_h = `r b0` + `r b1` \cdot `r Xbar` = `r b0 + b1 * Xbar`
-$$
-
-The standard error of this estimation is denoted
-
-$$
-s\{\text{pred}\} = \sqrt{MSE + s^2\{ \hat{Y}_h\}} = \sqrt{`r mse` + `r std_err_mean`^2}
-$$ and computed as `r std_err_pred`.
-
-The t-value is denoted by $$
-t(1 - \alpha/2, n-2) = t(1 - `r alpha` / 2, `r n` - 2)
-$$ and computed as `r t_star`.
-
-Therefore, the confidence interval for this single new prediction is
-
-$$
-\begin{aligned}
-\hat{Y}_h \pm t(1-\alpha/2, n-2) s\{\text{pred}\} &= `r Yhat_h` \pm `r t_star` \cdot `r std_err_pred` \\
-&= `r Yhat_h` \pm `r t_star * std_err_pred` \\
-&= (`r Yhat_h - t_star * std_err_pred`, `r Yhat_h + t_star * std_err_pred`)
-\end{aligned}
-$$
-
-## 6.c
-
-To predict the mean of 3 responses (the average of the next $m$ observation values, where $X_h$ is the same for all $m$ observations, the point estimate can be estimated as
-
-$$
-\hat{Y}_h = b_0 + b_1 X_h = `r b0` + `r b1` \cdot `r Xbar` = `r b0 + b1 * Xbar`
-$$
-
-The standard error of this estimation is denoted
-
-$$
-s\{\text{predmean}\} = \sqrt{\frac{MSE}{m} + s^2\{ \hat{Y}_h\}} = \sqrt{`r mse/m` + `r std_err_mean`^2}
-$$
-
-and computed as `r std_err_predmean`.
-
-The t-value is denoted by
-
-$$
-t(1 - \alpha/2, n-2) = t(1 - `r alpha` / 2, `r n` - 2)
-$$
-
-and computed as `r t_star`.
-
-Therefore, the confidence interval for this single new prediction is
-
-$$
-\begin{aligned}
-\hat{Y}_h \pm t(1-\alpha/2, n-2) s\{\text{predmean}\} &= `r Yhat_h` \pm `r t_star` \cdot `r std_err_predmean` \\
-&= `r Yhat_h` \pm `r t_star * std_err_predmean` \\
-&= (`r Yhat_h - t_star * std_err_predmean`, `r Yhat_h + t_star * std_err_predmean`)
-\end{aligned}
-$$
-
-## 6.d
-
-When estimating the mean response value given the $X_h =$ median of $X$, the corresponding standard error is **bigger than** when $X_h =$ mean of $X$, because **the variability of the sampling distribution of $\hat{Y}_h$ is affected by how far $X_h$ is from $\bar{X}$ (due to the $(X_h - \bar{X})^2$ term in the numerator), so when $X_h = \bar{X}$, which is itself the mean, it must be the case that the error is smaller than when $X_h$ is the median since the variability must be smaller**.
-
-## 6.e
-
-When estimating the mean of 10 responses, the corresponding standard error is **smaller** than when estimating the mean of 3 responses at the same X level, because **this is essentially an extension of the central limit theorem, and the more responses we add to our calculation, the tighter our distribution will get and the closer we will be to approaching the true mean response. Mathematically, as $m$ increases, the denominator of the variance/error term increases, driving error down**.
-
-# Problem 7
-
-We know that both ANOVA F test and T-test can be used to address the significance of the linear impact of $X$ on $Y$, $H_0: \beta_1 = 0, H_a: \beta_1 \ne 0$. We have completed the T-test in the previous questions, now complete an ANOVA F-test.
-
-Start by calculating the various sums:
-
-```{r}
-sst = sum((Y - Ybar)^2)
-Yhat = b0 + b1 * X
-sse = sum((Y - Yhat)^2)
-ssr = sum((Yhat - Ybar)^2)
-```
-
-*No new $\alpha$ was given, so we assume it is the same $\alpha = `r alpha`$ as in [Problem 6].*
-
-## 7.a
-
-$SST$ can be computed with the formula $SST = \sum(Y_i - \bar{Y})^2$ and has a value of $`r sst`$, the degree of freedom is computed with the formula: $n - 1$ and has a value of `r n - 1`.
-
-$SSE$ can be computed with the formula $SSE = \sum(Y_i - \hat{Y}_i)^2$ and has a value of $`r sse`$, the degree of freedom is computed with the formula: $n - 2$ and has a value of `r n - 2`.
-
-$SSR$ can be computed with the formula $SSR = \sum(\hat{Y}_i - \bar{Y})^2$ and has a value of $`r ssr`$, the degree of freedom is computed with the formula: $1$ and has a value of 1.
-
-## 7.b
-
-Compute the test statistic for the F test, $F^*$. The formula is $$
-F^* = \frac{MSR}{MSE} = \frac{SSR}{SSE / (n-2)} = \frac{`r ssr`}{`r sse` / (`r n`-2)}
-$$
-
-```{r}
-f_star = ssr / (sse / (n - 2))
-f_crit = qf(1 - alpha, 1, n - 2)
-```
-
-and has a value of `r f_star`.
-
-If we consider an identical set of input data being used, the $F^*$ obtained in the one-tailed $F$ test is related to the $t^*$ obtained from the two-tailed $t$ test in [Problem 3] by the following relation: $F^* = (t^*)^2$. However, we changed our $X$ input between the two problems, so the actual values between the two problems are not related in this way.
-
-## 7.c
-
-The critical value of the F-test can be denoted by $F(1 - \alpha, 1, n-2)$ and has a value of $F(1 - `r alpha`, 1, `r n` - 2) = F(`r 1 - alpha`, 1, `r n - 2`) = `r f_crit`$.
-
-## 7.d
-
-Compute the p-value for the F-test with the formula
-$$
-p = P\{F(1, n - 2) > F^*\} = P\{F(1, `r n - 2`) > `r f_star`\}
-$$
-
-```{r}
-p_f_star = 1 - pf(136.75, 1, n - 2)
-```
-
-and a value of `r p_f_star`.
-
-Had these two tests been using the same $X$ and $\alpha$ values, they would theoretically have the same p-value, and although they appear the same since they are both so close to zero here, they are **not** actually the same value theoretically.
-
-# Problem 8
-
-## 8.a
-
-General linear test (GLT) constructs and then compares two models that establish under $H_0$ and $H_a$. Specifically, the full model is established under $H_a$, and the reduced model is established under $H_0$.
-
-## 8.b
-
-The total error in the full model, SSE(Full) or SSE(F) has a value of $SSE(F) = SSE = `r sse`$ and a degree of freedom of $n - 2 = `r n - 2`$. The total error in the reduced model, SSE(Reduced) or SSE(R) has a value of $SSE(R) = SST = `r sst`$ and a degree of freedom of $n - 1 = `r n - 1`$.
-
-## 8.c
-
-Discuss the connection between the Global F test and the GLT F test in the following perspectives:
-
-### 8.c.i
-
-The null and alternative hypothesis:
-
-The null and alternative hypotheses can be defined identically for the Global F test and the GLT F test:
-
-$$
-\begin{gathered}
-H_0: \beta_1 = 0 \\
-H_a: \beta_1 \ne 0
-\end{gathered}
-$$
-
-In both cases, this choice of hypotheses allows us to draw conclusions about whether or not the additional parameter $\beta_1$ helps to reduce the variation in $Y_i$ about the fitted regression function.
-
-### 8.c.ii
-
-The test statistic:
-
-*When in simple linear regression*, the test statistic of the GLT is identical to the one from the ANOVA/global F test, since it is defined by a difference in the SSE of the reduced and full models which ultimately simplifies to $MSR/MSE$, which is the same ratio that the statistic in the global F test simplifies to under SLR.
-
-### 8.c.iii
-
-Situations when the two methods are equivalent, and situations when only GLT test is appropriate:
-
-While the two methods are equivalent under simple linear regression, GLT can be extended to highly complex tests of linear models with multiple parameters as in the case of Multiple Linear Regression, while the Global F test is not appropriate in these cases.
+Suppose the data is grouped by the tenth digits as follows,
+X Y
+0.1 65
+0.4 30
+0.3 22
+0.3 31
+0.2 9
+Then the SSPE is ________(increased/decreased) by ______; the dfPE=_____________ and
+dfLF=_____________.
