@@ -310,7 +310,7 @@ in [3.b] are derived from $Y$ and are not shown in the table.
 
 # Problem 4
 
-Consider a lack of fit test on the following data on Y ~ X:
+Consider a lack of fit test on the following data on $Y \sim X$:
 
 ```{r}
 data_p4 <- data.frame(
@@ -358,11 +358,42 @@ $DFPE = n - c = `r dfpe`$ and $DFLF = c - 2 = `r dflf`$.
 
 ## 4.c
 Suppose the data is grouped by the tenth digits as follows,
-X Y
-0.1 65
-0.4 30
-0.3 22
-0.3 31
-0.2 9
-Then the SSPE is ________(increased/decreased) by ______; the dfPE=_____________ and
-dfLF=_____________.
+
+```{r}
+data_p4 <- data.frame(
+  x = c(0.1, 0.4, 0.3, 0.3, 0.2),
+  y = c(65, 30, 22, 31, 9)
+)
+kable(data_p4)
+```
+
+Then (from the original table given at the start of the problem), the $SSPE$ is
+**increased** by...
+
+```{r}
+anova_results <- anova(lm(y ~ x, data_p4), lm(y ~ as.factor(x), data_p4))
+sspe <- anova_results[2, "RSS"]
+dfpe <- anova_results[2, "Res.Df"]
+dflf <- anova_results[2, "Df"]
+```
+
+$$
+SSPE = (Y_{ij} - \bar{Y}_i)^2 = `r sspe`
+$$
+
+
+$SSPE$ has **increased** by `r sspe` from its original value of $0$; the $DFPE =
+n - c = `r dfpe`$, and the $DFLF = c - 2 = `r dflf`$.
+
+# Problem 5
+
+Utilize the life expectancy data and examine a simple linear regression $Y \sim
+X$, where $X = X_3$ (pharmacists), and $Y$ represents life expectancy. Employ R
+to assess assumptions for the SLR.
+
+Conduct screening through the scatter plot, residual plot on 𝑋, residual plot on 𝑌෠, Shapiro test, BrownForsythe test, Breusch-Pagan test, and provide comments on:
+• Linear relationship
+• Constant variance
+• Normal errors
+• Outliers 
+
