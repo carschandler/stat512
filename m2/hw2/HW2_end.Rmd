@@ -19,6 +19,61 @@ x <- le$Nurses
 y <- le$X2015Life.expectancy
 ```
 
+# Problem 1
+Using the R-generated summary and ANOVA table for the model $Y \sim X$, answer the following
+questions.
+
+First, set up $X, Y$:
+
+```{r}
+n <- length(x)
+model <- lm(y ~ x)
+model_summary <- summary(model)
+model_anova <- anova(model)
+alpha <- 0.05
+t_star <- model_summary$coefficients["x", "t value"]
+t_crit <- qt(1 - alpha / 2, n - 2)
+p <- 2 * (1 - pt(t_star, n - 2))
+
+model_summary
+model_anova
+```
+
+## 1.a
+
+For a two-sided hypothesis test on the linear impact, $H_0: \beta_1 = 0, H_a:
+\beta_1 \ne 0$ if a T-test is used, the test statistic is computed with the
+formula: $t^* = \frac{b_1 - \beta_1}{s\{b_1\}} = \frac{b_1}{s\{b_1\}}$, which is
+computed as `r t_star`; The critical value (*assuming $\alpha = 0.05$*) has the
+notation of $t(1 - \alpha / 2, n - 2) = t(1 - 0.025, `r n` - 2)$, and a value of
+`r t_crit`.
+
+The p-value of the test can be computed with the formula $P[t(n-2) < -t^*] +
+P[t(n-2) > t^{*}] = 2P[t(n-2) > t^{*}]$, which is double the one-sided p-value.
+As shown above, to calculate this in R, we can use the `pt()` function to
+calculate the CDF of the t-distribution at our $t^*$ value, which yields the
+complement of the one-sided p-value, so we can then subtract the value from 1 to
+get the one-sided p-value and double it to get the two-sided value. The value is
+`r p`.
+
+## 1.b
+The answer can be verified by observing the `Coefficients` section of the
+summary table, at the intersection of row `x` and column `Pr(>|t|)`:
+
+```{r}
+model_summary$coefficients
+```
+
+The value is `r model_summary$coefficients["x", "Pr(>|t|)"]`, which is
+effectively $0$.
+
+## 1.c
+
+Adjust the HT components from a two-sided test to a one-sided test. Consider the
+one-sided HT $H_0: \beta_1 = 0, H_a: \beta_1 > 0$, the test statistic is the
+same as the two-sided test, but the p-value needs to be adjusted with the
+formula $P[t(n-2) > t^{*}]$ and computed as `r p / 2` in this question.
+
 # Problem 2
 For a two-sided hypothesis test on the significance of the linear correlation coefficient between $X$ and $Y$, $H_0: \rho = 0, H_a: \rho \ne 0$...
 
