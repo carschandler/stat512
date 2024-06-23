@@ -25,6 +25,10 @@
             pkgs.R
             pkgs.rPackages.languageserver
             pkgs.rPackages.alr4
+            pkgs.rPackages.ALSM
+            pkgs.rPackages.onewaytests
+            pkgs.rPackages.lmtest
+            pkgs.rPackages.MASS
             pkgs.rPackages.leaps
             pkgs.rPackages.SuppDists
             pkgs.rPackages.rmarkdown

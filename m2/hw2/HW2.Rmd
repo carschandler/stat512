@@ -10,6 +10,7 @@ output:
 
 # Setup
 Begin by reading the dataset for this set of problems:
+
 ```{r setup}
 le <- read.csv("./life_expectancy.csv")
 ```
@@ -172,7 +173,9 @@ and since $r = 0$ does not fall within this interval, we reject $H_0$ and
 conclude that the data are linearly associated.
 
 # Problem 3
-Consider a simple linear regression model with $Y \sim X$ on the following table. Practice doing the lack-of-fit by hand.
+
+Consider a simple linear regression model with $Y \sim X$ on the following
+table. Practice doing the lack-of-fit by hand.
 
 ```{r}
 library(knitr)
@@ -182,7 +185,7 @@ data_p3 <- data.frame(
 )
 x <- data_p3$x
 y <- data_p3$y
-kable(df, caption = "Problem 3 Dataset")
+kable(data_p3, caption = "Problem 3 Dataset")
 ```
 
 ## 3.a
@@ -446,9 +449,277 @@ Utilize the life expectancy data and examine a simple linear regression $Y \sim
 X$, where $X = X_3$ (pharmacists), and $Y$ represents life expectancy. Employ R
 to assess assumptions for the SLR.
 
-Conduct screening through the scatter plot, residual plot on 𝑋, residual plot on 𝑌෠, Shapiro test, BrownForsythe test, Breusch-Pagan test, and provide comments on:
-• Linear relationship
-• Constant variance
-• Normal errors
-• Outliers 
+Conduct screening through the scatter plot, residual plot on $X$, residual plot
+on $\hat{Y}$, Shapiro test, BrownForsythe test, Breusch-Pagan test, and provide
+comments on:
+
+* Linear relationship
+* Constant variance
+* Normal errors
+* Outliers 
+
+First, update $X, Y$ and generate the SLR model:
+
+```{r}
+x <- le$Pharmacists
+y <- le$X2015Life.expectancy
+model <- lm(y ~ x)
+```
+
+## Scatter Plot and Regression Line
+
+```{r fig.cap = "Regression Line and Scatter Plot"}
+plot(y ~ x)
+abline(model)
+```
+
+From the scatter plot, it appears that $X$ does seem to have a moderate impact
+on $Y$ as we observe a pattern of slight increase in $Y$ with an increase in
+$X$. The amoult of data is much more dense at $X$ values near $0$ than
+elsewhere. There appears to be a slight amount of heteroskedasticity occurring
+with a higher variance at lower $X$ values, but this could just be a
+misconception due to the more sparsely distributed data at higher $X$ values. It
+also appears possible that the underlying population could be curvilinear in
+nature, but once again there are so few points at the higher $X$ values that
+this could be a misinterpretation. 
+
+## Residual Plot on $X$
+
+```{r fig.cap = "Residuals Plot"}
+plot(model$residuals ~ x, ylab = "Residuals")
+abline(h = 0)
+```
+
+The residuals plot reinforces the conclusions we drew from the previous plot,
+however it does show that there may be a slight positive skew in the residuals
+around the $X=2.5$ to $X=7.5$ range. And then they start to skew in the negative
+direction. This may be indicative of a curvilinear population distribution. Once
+again, the variance does seem to decrease as $X$ increases. There do not seem to
+be any extremely obvious outliers.
+
+
+## Residual Plot on the Fitted Values $\hat{Y}$
+
+```{r fig.cap = "Residuals Plot Against Fitted Values"}
+plot(
+  model$residuals ~ model$fitted.values,
+  xlab = "Fitted y-values", ylab = "Residuals"
+)
+abline(h = 0)
+```
+
+This is the same plot as the previous one, just with a different scale on the
+x-axis since the $\hat{Y}_i$ are a linear function of the $X_i$ values, so
+though the scale is different, the pattern remains the same, which our R plots
+show quite clearly thanks to their automatic re-scaling.
+
+## Shapiro-Wilk Test for Normality
+
+Our hypotheses are:
+
+$$
+\begin{gathered}
+H_0: \text{ residuals follow a normal distribution} \\
+H_a: \text{ residuals deviate significantly from a normal distribution}
+\end{gathered}
+$$
+
+```{r}
+shapiro_results <- shapiro.test(model$residuals)
+shapiro_results
+```
+
+$p = `r shapiro_results$y.value` < 0.05 = \alpha$, so we reject $H_0$ and
+conclude that the data does not follow a normal distribution. This makes sense
+given that we do not see the residuals more tightly distributed about the $e=0$
+line, tapering out as they move away from it, but rather they seem to be
+scattered somewhat uniformly.
+
+
+## Brown-Forsythe Test 
+
+Our hypotheses are:
+
+$$
+\begin{gathered}
+H_0: \text{ residuals have constant variance} \\
+H_a: \text{ residuals have non-constant variance}
+\end{gathered}
+$$
+
+The tricky part about this test is determining where to split the data into two
+groups. If we choose a central measure of $X$ as the value at which to split,
+such as the mean ($`r mean(x)`$) or median ($`r median(x)`$), we will have a two
+groups with a relatively even number of samples in them, but the range of the
+group to the left of the split will be much smaller than that of the group on
+the right since we have so many more measurements at small $X$ values. If we try
+to split the groups to have equal ranges at a value like $12$, then the group on
+the right will have significantly less samples than the one on the left. To
+compromise, we choose to split at a value of $7$, striking a balance between the
+two issues.
+
+```{r}
+library(ALSM)
+x_split <- 7
+groups <- x < x_split
+bf_results <- bftest(model, groups)
+bf_results
+```
+
+$p = `r bf_results[1, "P.Value"]` > 0.05 = \alpha$, so we fail to reject
+$H_0$ and we cannot say that the residuals exhibit heteroskedasticity. However,
+the $p$ value is quite close to $\alpha$ and if we were to choose a value closer
+to the center of the data, like $6$, we observe different results:
+
+```{r}
+x_split <- 6
+groups <- x < x_split
+bf_results <- bftest(model, groups)
+bf_results
+```
+
+This time, $p = `r bf_results[1, "P.Value"]` < 0.05 = \alpha$, so we *reject*
+$H_0$ and conclude that the data *do* exhibit heteroskedasticity.
+
+Since our 2-group BF test is somewhat ambiguous, we can perform another with 4
+groups:
+
+```{r}
+library(onewaytests)
+df_bf <- data.frame(
+  group = cut(x, 4),
+  residual = model$residuals
+)
+bf_4_results <- bf.test(residual ~ group, df_bf)
+```
+
+This time around, our $p$ value is much smaller, we reject $H_0$, and conclude
+that the residuals are heteroskedastic. Even still, two of our groups in this
+test had less than 5 samples in them:
+
+```{r}
+table(df_bf$group)
+```
+
+so we would prefer to collect more data at the higher $X$ values before making
+any strong conclusions about the data, but we will tentatively conclude that the
+residuals are heteroskedastic based on this test.
+
+## Breusch-Pagan Test
+
+Once again, our hypotheses are:
+
+$$
+\begin{gathered}
+H_0: \text{ residuals follow a normal distribution} \\
+H_a: \text{ residuals deviate significantly from a normal distribution}
+\end{gathered}
+$$
+
+```{r}
+library(lmtest)
+bp_results <- bptest(model)
+bp_results
+```
+
+$p = `r bp_results$p.value` > 0.05 = \alpha$, so we fail to reject $H_0$ and we
+cannot say that the residuals exhibit heteroskedasticity based on this test.
+
+## Comments
+
+### Linear Relationship
+
+Considering the linear relationship between $Y$ and $X$, it seemed from the
+[Scatter Plot and Regression Line] that $X$ had an impact on $Y$, which we can
+confirm with an ANOVA analysis:
+
+```{r}
+anova_results <- anova(model)
+anova_results
+```
+
+The p-value is very low here, so we can conclude that $X$ does contribute to a
+reduction in the variance of $Y$.
+
+Regarding the goodness of the linear fit, we noted previously that it seems
+possible the population may be curvilinear. To test this, we can perform a
+lack-of-fit test with hypotheses:
+
+$$
+\begin{gathered}
+H_0: E\{ Y \} = \beta_0 + \beta_1 X \\
+H_a: E\{ Y \} \ne \beta_0 + \beta_1 X \\
+\end{gathered}
+$$
+
+```{r}
+anova_results <- anova(model, lm(y ~ as.factor(x)))
+anova_results
+```
+
+$p = `r anova_results[2, "Pr(>F)"]` > 0.05 = \alpha$, so we fail to reject $H_0$
+and we cannot conclude that there is a lack of fit problem with the SLR.
+
+
+### Constant Variance
+
+As we covered thoroughly in the [Brown-Forsythe Test] and [Breusch-Pagan Test]
+sections above, the results of the various tests were ambiguous as to whether or
+not the residuals exhibit non-constant variance. The ideal solution would be to
+gather more samples in the larger $X$ regions and re-compute these tests.
+
+### Normal errors
+
+In the [Shapiro-Wilk Test for Normality], we concluded that the residuals are
+not normally distributed. One other diagnostic tool we can use for this metric
+is the normal quantile-quantile plot:
+
+```{r}
+qqnorm(model$residuals)
+qqline(model$residuals)
+```
+
+In this plot, we can see a fair amount of deviation from the ideal normal QQ
+line, especially at the more extreme theoretical quantile levels.
+
+### Outliers
+
+Looking at the various residual plots above, there do not seem to be any
+extremely obvious outliers, but we can utilize a box plot to see whether it
+determines there are any:
+
+```{r}
+boxplot(model$residuals)
+```
+
+The plot does show one outlier at the far-negative end of the residuals. This is
+typically determined by some metric like being below $Q_1 - 1.5 IQR$, referring
+to the first quartile and the interquartile range $Q3 - Q1$.
+
+# Problem 6
+
+Do you think it is necessary to transform $X$ or $Y$?
+
+I do not think it is necessary to transform $X$ or $Y$ because the linear model
+seems to do an adequate job at representing the relationship between these two
+variables. The lack-of-fit test that we performed in the [Linear Relationship]
+section above showed that we could not conclude with statistical significance
+that there was a lack of fit in the SLR line, so we probably do not stand to
+gain much from transforming in this case.
+
+# Problem 7
+
+Utilize R to conduct a Box-Cox transformation on $Y$, then proceed with the same
+diagnostic process as in [Problem 5]. Compare the transformed model with the
+original model.
+
+```{r}
+library(MASS)
+bc_mle <- boxcox(model, lambda = seq(-3, 10, by = 0.1))
+lambda_mle <- bc_mle$x[which.max(bc_mle$y)]
+
+bc_sse <- boxcox.sse(x = x, y = y, l = seq(-3, 10, by = 0.1))
+lambda_sse <- bc_sse$x[which.max(bc_sse$y)]
+```
+
 
