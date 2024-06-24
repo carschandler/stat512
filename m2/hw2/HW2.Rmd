@@ -364,8 +364,6 @@ second rows of the `Res.Df` column, respectively, and $DFLF$ is in the `Df`
 column. $c$ can be found indirectly from $c = 2 + DFLF$. The rest of the values
 in [3.b] are derived from $Y$ and are not shown in the table.
 
-# TODO: make sure to double check hand-typed numbers from tables in p3,4
-
 # Problem 4
 
 Consider a lack of fit test on the following data on $Y \sim X$:
@@ -389,7 +387,7 @@ and could not gather any new samples.
 
 # 4.b
 
-Suppose a new row is added: X 0.19, Y 59 and the sample size is now 6. Before,
+Suppose a new row is added: $X=0.19, Y=59$ and the sample size is now 6. Before,
 the $SSPE$ was simply $0$ because we had no replicates, and now it is just a
 function of the $X=0.19$ terms:
 
@@ -425,8 +423,8 @@ data_p4 <- data.frame(
 kable(data_p4)
 ```
 
-Then (from the original table given at the start of the problem), the $SSPE$ is
-**increased** by...
+Then (when compared against original table given at the start of the problem),
+the $SSPE$ is **increased** by...
 
 ```{r}
 anova_results <- anova(lm(y ~ x, data_p4), lm(y ~ as.factor(x), data_p4))
@@ -450,7 +448,7 @@ X$, where $X = X_3$ (pharmacists), and $Y$ represents life expectancy. Employ R
 to assess assumptions for the SLR.
 
 Conduct screening through the scatter plot, residual plot on $X$, residual plot
-on $\hat{Y}$, Shapiro test, BrownForsythe test, Breusch-Pagan test, and provide
+on $\hat{Y}$, Shapiro test, Brown-Forsythe test, Breusch-Pagan test, and provide
 comments on:
 
 * Linear relationship
@@ -529,7 +527,7 @@ shapiro_results <- shapiro.test(model$residuals)
 shapiro_results
 ```
 
-$p = `r shapiro_results$y.value` < 0.05 = \alpha$, so we reject $H_0$ and
+$p = `r shapiro_results$p.value` < 0.05 = \alpha$, so we reject $H_0$ and
 conclude that the data does not follow a normal distribution. This makes sense
 given that we do not see the residuals more tightly distributed about the $e=0$
 line, tapering out as they move away from it, but rather they seem to be
@@ -705,7 +703,8 @@ seems to do an adequate job at representing the relationship between these two
 variables. The lack-of-fit test that we performed in the [Linear Relationship]
 section above showed that we could not conclude with statistical significance
 that there was a lack of fit in the SLR line, so we probably do not stand to
-gain much from transforming in this case.
+gain much from transforming in this case. The one area where it might improve
+the model would be in making the variance more constant with respect to $X$.
 
 # Problem 7
 
@@ -715,11 +714,199 @@ original model.
 
 ```{r}
 library(MASS)
-bc_mle <- boxcox(model, lambda = seq(-3, 10, by = 0.1))
-lambda_mle <- bc_mle$x[which.max(bc_mle$y)]
 
-bc_sse <- boxcox.sse(x = x, y = y, l = seq(-3, 10, by = 0.1))
-lambda_sse <- bc_sse$x[which.max(bc_sse$y)]
+# 0.001 is overkill but still fast to compute
+bc_mle <- boxcox(model, lambda = seq(0, 7, by = 0.001))
+lambda_mle <- bc_mle$x[which.max(bc_mle$y)]
+yt <- y^lambda_mle
 ```
 
+$$
+\lambda = `r lambda_mle`
+$$
 
+Proceeding with the same diagnostic procedure as before, we will make comments
+on the plots and compare them to the pre-transformed ones, comparing the overall
+shape and relative distances in the plots between the two since the values are
+obviously not directly comparable in the different scales.
+
+First, generate the new transformed SLR model:
+
+```{r}
+model <- lm(yt ~ x)
+```
+
+## Transformed Scatter Plot and Regression Line
+
+```{r fig.cap = "Transformed Regression Line and Scatter Plot"}
+plot(yt ~ x)
+abline(model)
+```
+
+This plot looks similar to the pre-transformed one, but when comparing side by
+side it is possible to see where the values have been stretched and squeezed by
+the transformation. In particular, the values near $X=0$ that were quite far
+from the regression line have been brought in closer to it, showing less
+(relative) variance overall and a better linear fit.
+
+## Transformed Residual Plot on $X$
+
+```{r fig.cap = "Transformed Residuals Plot"}
+plot(model$residuals ~ x, ylab = "Residuals")
+abline(h = 0)
+```
+
+The residuals plot exhibits the same behavior noted in the scatter plot,
+particularly regarding the values near $X = 0$. The values seem to have more
+uniform variance throughout, but there does still seem to be a slight skew
+toward the positive residuals overall.
+
+## Transformed Residual Plot on the Fitted Values $\hat{Y}$
+
+```{r fig.cap = "Residuals Plot Against Fitted Values"}
+plot(
+  model$residuals ~ model$fitted.values,
+  xlab = "Fitted transformed y-values", ylab = "Residuals"
+)
+abline(h = 0)
+```
+
+Like last time, this is a duplication of the previous plot.
+
+## Transformed Shapiro-Wilk Test for Normality
+
+Our hypotheses are:
+
+$$
+\begin{gathered}
+H_0: \text{ residuals follow a normal distribution} \\
+H_a: \text{ residuals deviate significantly from a normal distribution}
+\end{gathered}
+$$
+
+```{r}
+shapiro_results <- shapiro.test(model$residuals)
+shapiro_results
+```
+
+$p = `r shapiro_results$p.value` > 0.05 = \alpha$, so we fail to reject $H_0$
+and we cannot conclude the data does not follow a normal distribution. This
+makes sense given that we saw the residuals tighten in toward the $0$ line,
+mirroring a normal distribution more closely this time after the transformation.
+
+## Transformed Brown-Forsythe Test 
+
+Our hypotheses are:
+
+$$
+\begin{gathered}
+H_0: \text{ residuals have constant variance} \\
+H_a: \text{ residuals have non-constant variance}
+\end{gathered}
+$$
+
+We will start off with the same first split as previously at $X=7$:
+
+```{r}
+library(ALSM)
+x_split <- 7
+groups <- x < x_split
+bf_results <- bftest(model, groups)
+bf_results
+```
+
+$p = `r bf_results[1, "P.Value"]` > 0.05 = \alpha$, so we fail to reject
+$H_0$ and we cannot say that the residuals exhibit heteroskedasticity. This
+time, the $p$ value is nowhere near $\alpha$ and even if we drop down to a split
+at the median, we still fail to reject $H_0$. This indicates that the transform
+has done a good job at making the variance constant:
+
+```{r}
+x_split <- median(x)
+groups <- x < x_split
+bf_results <- bftest(model, groups)
+bf_results
+```
+
+We are satisfied with the results of the transformation as concerns
+heteroskedasticity, so we proceed on.
+
+## Transformed Breusch-Pagan Test
+
+Once again, our hypotheses are:
+
+$$
+\begin{gathered}
+H_0: \text{ residuals follow a normal distribution} \\
+H_a: \text{ residuals deviate significantly from a normal distribution}
+\end{gathered}
+$$
+
+```{r}
+library(lmtest)
+bp_results <- bptest(model)
+bp_results
+```
+
+$p = `r bp_results$p.value` > 0.05 = \alpha$, so we fail to reject $H_0$ and we
+cannot say that the residuals exhibit heteroskedasticity based on this test.
+Once again, the transform has done its job.
+
+## Comments
+
+### Linear Relationship
+
+Considering the linear relationship between $Y$ and $X$, it still seemed from
+the [Transformed Scatter Plot and Regression Line] that $X$ had an impact on
+$Y$, which we can confirm with an ANOVA analysis:
+
+```{r}
+anova_results <- anova(model)
+anova_results
+```
+
+The p-value is very low here, so we can conclude that $X$ does contribute to a
+reduction in the variance of $Y$.
+
+### Constant Variance
+
+As we covered in the [Transformed Brown-Forsythe Test] and [Tranformed Breusch-Pagan Test]
+sections above, the results of the tests support the conclusion that the
+transformation has kept us from concluding that the data is heteroskedastic
+anymore. In other words, the transformation has made the variance more constant
+as a function of $X$.
+
+### Normal errors
+
+In the [Transformed Shapiro-Wilk Test for Normality], we concluded that the
+residuals were normally distributed. One other diagnostic tool we can use for
+this metric is the normal quantile-quantile plot:
+
+```{r}
+qqnorm(model$residuals)
+qqline(model$residuals)
+```
+
+We can see how the plot has tightened up to the ideal normal line, especially
+when looking at the values in the more extreme theoretical quantiles.
+
+### Outliers
+
+Looking at the various residual plots above, there do not seem to be any
+extremely obvious outliers, but we can utilize a box plot to see whether it
+determines there are any:
+
+```{r}
+boxplot(model$residuals)
+```
+
+The one outlier observed previously has been eliminated due to the transform.
+
+## Conslusion
+
+In conclusion, the transformation did not make any drastic changes to the data
+as the linear fit did a fair job in the first place. One area that was
+significantly improved was the heteroskedasticity of the data, with the
+transformation bringing it much closer to homoskedasticity. Given the extra work
+needed to inpterpret the data, especially if applying back-transformations,
+might not be worth the extra effort though.
