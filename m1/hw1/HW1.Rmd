@@ -11,7 +11,7 @@ output:
 # Setup
 Begin by reading the dataset for this set of problems:
 ```{r setup}
-le <- read.csv("./life_expectancy.csv")
+le <- read.csv("../../datasets/life_expectancy.csv")
 ```
 
 # Problem 1

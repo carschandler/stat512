@@ -1,0 +1,132 @@
+---
+title: "HW3"
+author: "Robert Chandler"
+email: "chandl71@purdue.edu"
+date: "2024-06-30"
+output:
+  pdf_document: default
+---
+
+# Setup
+Begin by reading the dataset for this set of problems:
+
+```{r setup}
+le <- read.csv("../../datasets/life_expectancy.csv")
+```
+
+```{r}
+y <- le$X2015Life.expectancy
+x1 <- le$Medical.doctors
+x2 <- le$Nurses
+x3 <- le$Pharmacists
+```
+
+Utilize the life expectancy data and examine a simple linear regression $Y \sim X$,
+where $X = X_3$, and $Y$ represents life expectancy.
+
+Set $X$ accordingly:
+
+```{r}
+x <- x3
+```
+
+# Problem 1
+
+At a confidence level of 95%...
+
+# 1.a
+
+```{r}
+alpha <- 0.05
+n <- length(y)
+t_crit <- qt(1 - alpha / 2, n - 2)
+b <- qt(1 - alpha / 4, n - 2)
+```
+
+To find the individual confidence intervals for $\beta_0$, the critical value is denoted by
+$t(1 - \alpha / 2, n-2)$ and has a value of $t(1 - `r alpha` / 2, `r n` - 2) =
+`r t_crit`$.
+
+# 1.b
+
+To find the individual confidence intervals for $\beta_1$, the critical value is denoted by
+$t(1 - \alpha / 2, n-2)$ and has a value of $t(1 - `r alpha` / 2, `r n` - 2) =
+`r t_crit`$.
+
+# 1.c
+
+To calculate the Bonferroni joint confidence intervals for all parameters using
+an $\alpha = 0.05$, the critical value is denoted by $t(1- \frac{\alpha}{2p},
+DFE ) = t(1- \frac{\alpha}{4}, n - 2)$ and has a value of $t(1 - \frac{`r
+alpha`}{4}, `r n` - 2) = `t_crit_bonf`$.
+
+# 1.d
+
+Calculate the Working-Hotelling joint confidence intervals for all parameters
+using an $\alpha = 0.05$. 
+
+```{r}
+w <- sqrt(2 * qf(1 - alpha, 2, n - 2))
+model <- lm(y ~ x)
+model_summary <- summary(model)
+model_summary
+b0 <- model$coefficients[["(Intercept)"]]
+b1 <- model$coefficients[["x"]]
+t0 <- model_summary$coefficients["(Intercept)", "t value"]
+t1 <- model_summary$coefficients["x", "t value"]
+
+b0_interval <- c(b0 - w * t0, b0 + w * t0)
+b1_interval <- c(b1 - w * t1, b1 + w * t1)
+```
+
+The interval for $b_0$ is $(`r b0_interval`)$, and the interval for $b1$ is $(`r 
+b1_interval`)$
+
+The critical value is denoted by $W = \sqrt{2 F(1 - \alpha; 2, n - 2)}$ and has
+a value of $W = \sqrt{2 F(1 - \alpha; 2, n - 2)}$.
+
+# 1.e
+
+Which joint confidence interval is better? Briefly explain
+
+For joint estimation of the *parameters*, the Bonferroni interval is better
+because it yields a smaller critical value: $W = `r w` > `r b` = B$. This is
+consistent across all models when we are estimating the
+parameters/weights/coefficients simultaneously for a linear model. That is, $W/B
+> 1$.
+
+# Problem 2
+
+At the confidence level of 95%...
+
+## 2.a
+
+To find the individual confidence interval for the mean response 𝑌௛
+෢, where 𝑋௛ =
+the mean of the sample, the critical value is denoted by ______and has a value of ______, the standard
+error can be computed with the formula ___________and has a value of ________.
+
+## 2.b
+
+To find the individual confidence interval for the mean response 𝑌௛
+෢, where 𝑋௛ =
+the median of the sample, the critical value is denoted by ______and has a value of ______, the
+standard error can be computed with the formula ___________and has a value of ________.
+
+## 2.c
+
+To compute the joint confidence interval for the mean responses for 5 different 𝑋௛ levels
+(data points), the Bonferroni critical value is denoted by ______and has a value of ______; the WH
+critical value is denoted by ______and has a value of _____.
+Which method is better here and why?
+Which method should you suggest if you are not sure what 𝑋 levels are to be predicted?
+
+## 2.d
+
+To calculate the Bonferroni joint confidence interval for the single response prediction at 3 𝑋௛
+levels, the critical value is denoted by ______and has a value of ______,
+
+## 2.e
+
+To calculate the Scheffe joint confidence interval for the single response predictions at 3 𝑋௛
+levels, the critical value is denoted by ______and has a value of ______,
