@@ -39,8 +39,9 @@ At a confidence level of 95%...
 ```{r}
 alpha <- 0.05
 n <- length(y)
-t_crit <- qt(1 - alpha / 2, n - 2)
-crit_bonf <- qt(1 - alpha / 4, n - 2)
+p <- 2
+t_crit <- qt(1 - alpha / 2, n - p)
+crit_bonf <- qt(1 - alpha / 4, n - p)
 ```
 
 To find the individual confidence intervals for $\beta_0$, the critical value is denoted by
@@ -57,7 +58,7 @@ $t(1 - \alpha / 2, n-2)$ and has a value of $t(1 - `r alpha` / 2, `r n` - 2) =
 
 To calculate the Bonferroni joint confidence intervals for all parameters using
 an $\alpha = 0.05$, the critical value is denoted by $B = t(1- \frac{\alpha}{2p},
-DFE) = t(1- \frac{\alpha}{4}, n - 2)$ and has a value of $t(1 - \frac{`r 
+DFE) = t(1- \frac{\alpha}{4}, n - p)$ and has a value of $t(1 - \frac{`r 
 alpha`}{4}, `r n` - 2) = `r crit_bonf`$.
 
 # 1.d
@@ -66,7 +67,6 @@ Calculate the Working-Hotelling joint confidence intervals for all parameters
 using an $\alpha = 0.05$. 
 
 ```{r}
-p <- 2
 w <- sqrt(p * qf(1 - alpha, p, n - p))
 model <- lm(y ~ x)
 model_summary <- summary(model)
@@ -83,16 +83,16 @@ b1_interval <- c(b1 - w * t1, b1 + w * t1)
 The interval for $b_0$ is $(`r b0_interval`)$, and the interval for $b_1$ is $(`r 
 b1_interval`)$
 
-The critical value is denoted by $W = \sqrt{2 F(1 - \alpha; 2, n - 2)}$ and has
-a value of $W = \sqrt{2 F(1 - \alpha; 2, n - 2)} = \sqrt{2 F(1 - `r alpha`; 2,
-`r n` - 2)} = `r w`$.
+The critical value is denoted by $W = \sqrt{2 F(1 - \alpha; p, n - p)}$ and has
+a value of $W = \sqrt{2 F(1 - \alpha; p, n - p)} = \sqrt{2 F(1 - `r alpha`; `r p`,
+`r n` - `r p`)} = `r w`$.
 
 # 1.e
 
 Which joint confidence interval is better? Briefly explain
 
 For joint estimation of the *parameters*, the Bonferroni interval is better
-because it yields a smaller critical value: $W = `r w` > `r crit_bonf` = B$.
+because it yields a smaller critical value: $B = `r crit_bonf` < `r w` = W$.
 This is consistent across all models when we are estimating the
 parameters/weights/coefficients simultaneously for a linear model. That is, $W/B
 > 1$.
@@ -106,7 +106,7 @@ At the confidence level of 95%...
 ## 2.a
 
 ```{r}
-t_crit <- qt(1 - alpha / 2, n - 2)
+t_crit <- qt(1 - alpha / 2, n - p)
 mse <- anova(model)["Residuals", "Mean Sq"]
 std_err_mean <- sqrt(mse / n)
 ```
@@ -157,14 +157,14 @@ To compute the joint confidence interval for the mean responses for 5 different
 $X_h$ levels (data points), the Bonferroni critical value is denoted by
 
 $$
-B = t\left(1 - \frac{\alpha}{2g}, n - 2\right)
+B = t\left(1 - \frac{\alpha}{2g}, n - p\right)
 $$
 
 and has a value of 
 
 ```{r}
 g <- 5
-crit_bonf_5 <- qt(1 - alpha / (2 * g), n - 2)
+crit_bonf_5 <- qt(1 - alpha / (2 * g), n - p)
 ```
 
 $$
@@ -174,13 +174,13 @@ $$
 The WH critical value is denoted by 
 
 $$
-W = \sqrt{2 F(1 - \alpha; 2, n - 2)}
+W = \sqrt{2 F(1 - \alpha; 2, n - p)}
 $$
 
 and has a value of 
 
 $$
-W = \sqrt{2 F(1 - \alpha; 2, n - 2)} = \sqrt{2 F(1 - `r alpha`; 2, `r n` - 2)} =
+W = \sqrt{2 F(1 - \alpha; 2, n - p)} = \sqrt{2 F(1 - `r alpha`; 2, `r n` - 2)} =
 `r w`
 $$
 
@@ -204,14 +204,14 @@ To calculate the Bonferroni joint confidence interval for the single response
 prediction at 3 $X_h$ levels, the critical value is denoted by
 
 $$
-B = t\left(1 - \frac{\alpha}{2g}, n - 2\right)
+B = t\left(1 - \frac{\alpha}{2g}, n - p\right)
 $$
 
 and has a value of
 
 ```{r}
 g <- 3
-crit_bonf_3 <- qt(1 - alpha / (2 * g), n - 2)
+crit_bonf_3 <- qt(1 - alpha / (2 * g), n - p)
 ```
 
 $$
@@ -224,13 +224,13 @@ To calculate the Scheffe joint confidence interval for the single response
 predictions at 3 $X_h$ levels, the critical value is denoted by 
 
 $$
-S = \sqrt{gF(1 - \alpha; g, n - 2)}
+S = \sqrt{gF(1 - \alpha; g, n - p)}
 $$
 
 and has a value of 
 
 ```{r}
-crit_scheffe_3 <- qf(1 - alpha, g, n - 2)
+crit_scheffe_3 <- qf(1 - alpha, g, n - p)
 ```
 
 $$
@@ -244,6 +244,7 @@ For Problems 3-8, consider a multiple linear regression (MLR) model where $Y
 
 ```{r}
 model <- lm(y ~ x1 + x2 + x3)
+p <- 4
 ```
 
 # Problem 3
@@ -311,17 +312,17 @@ We can compute the different sum of squares terms as follows:
 
 ```{r}
 j <- matrix(1, n, n)
-ssm <- t(y) %*% (hat - j / n) %*% y
+ssr <- drop(t(y) %*% (hat - j / n) %*% y)
 
 i <- diag(n)
-sse <- t(y) %*% (i - hat) %*% y
+sse <- drop(t(y) %*% (i - hat) %*% y)
 
-sst <- t(y) %*% (i - j / n) %*% y
+sst <- drop(t(y) %*% (i - j / n) %*% y)
 ```
 
 $$
-SSM = (\hat{Y}_{i} - \bar{Y})^{2} = b' X' Y - \frac{1}{n}Y'JY = Y'\left[ H -
-\frac{J}{n} \right] Y = `r ssm`
+SSR = (\hat{Y}_{i} - \bar{Y})^{2} = b' X' Y - \frac{1}{n}Y'JY = Y'\left[ H -
+\frac{J}{n} \right] Y = `r ssr`
 $$
 
 $$
@@ -344,18 +345,18 @@ anova_results <- anova(model)
 anova_results
 ```
 
-We can verify $SSM$ by summing the `x1`, `x2`, and `x3` rows of the `Sum Sq`
+We can verify $SSR$ by summing the `x1`, `x2`, and `x3` rows of the `Sum Sq`
 column of our ANOVA results and asserting that the sum is equal to the value
 calculated in [Problem 3].
 
 ```{r}
-ssm_anova <- sum(anova_results[c("x1", "x2", "x3"), "Sum Sq"])
+ssr_anova <- sum(anova_results[c("x1", "x2", "x3"), "Sum Sq"])
 
-print(paste("SSM from ANOVA:", ssm_anova))
-print(paste("SSM from matrix algebra:", ssm))
+print(paste("SSR from ANOVA:", ssr_anova))
+print(paste("SSR from matrix algebra:", ssr))
 
 stopifnot(
-  all.equal(drop(ssm), ssm_anova)
+  all.equal(drop(ssr), ssr_anova)
 )
 ```
 
@@ -387,82 +388,328 @@ stopifnot(
 
 # Problem 5
 
-Use R to compute the variance-covariance matrix of the residuals $\sum e$, where
-$\sum e = \sigma^2(I - H)$, and $\sigma^2$ can be estimated by $MSE$. Note that
-this reflects the actual variance-covariance of the residual. The less
-assumption violation there is, the closer this matrix is to the
-variance-covariance matrix of the random error.
+Use R to compute the variance-covariance matrix of the residuals
+$\Sigma[\mathbf{e}]$, where $\Sigma[\mathbf{e}] = \sigma^2(I - H)$, and
+$\sigma^2$ can be estimated by $MSE$. Note that this reflects the actual
+variance-covariance of the residual. The less assumption violation there is, the
+closer this matrix is to the variance-covariance matrix of the random error.
+
+```{r}
+mse <- anova_results["Residuals", "Mean Sq"]
+cov <- mse * (i - hat)
+```
+
+# TODO display matrix
+
 
 ## 5.a
 
 What is the dimension of the matrix?
 
+The dimension is $(`r dim(cov)`)$.
+
 ## 5.b
 
 Under assumption of independence and constant variance, what is the
-variance-covariance matrix of the random error $\sum \varepsilon$?
+variance-covariance matrix of the random error $\Sigma[\varepsilon]$?
+
+If the variables are independent, then their covariance is $\mathbf{0}$.
 
 # TODO is this just supposed to be $e$ above instead of $\varepsilon$?
 
 # Problem 6
 
-Use R to compute the variance-covariance matrix of the parameters $\sum b$, where
-$\sum b = \sigma^2 (X'X)^-1$, and $\sigma^2$ can be estimated by $MSE$.
+Use R to compute the variance-covariance matrix of the parameters
+$\Sigma[\mathbf{b}]$, where $\Sigma[\mathbf{b}] = \sigma^2 (X'X)^-1$, and
+$\sigma^2$ can be estimated by $MSE$.
+
+```{r}
+cov_b <- mse * solve(t(x) %*% x)
+```
+
+# TODO print matrix
+
 
 ## 6.a
 
 What is the dimension of the matrix?
 
+The dimension is $(`r dim(cov_b)`)$
+
 ## 6.b
 
 What is the standard error of $b_1$, $b_2$, and $b_3$?
 
+We can find the standard error by simply taking the square root of our
+covariance matrix and observing the 3 last diagonal values.
+
+```{r}
+std_err_b123 <- diag(cov_b^0.5)[c("x1", "x2", "x3")]
+std_err_b123
+```
+
+We can check these against our model summary's values and assert that they are
+equal
+
+```{r}
+model_summary <- summary(model)
+std_err_b123_ms <- model_summary$coefficients[c("x1", "x2", "x3"), "Std. Error"]
+std_err_b123_ms
+
+stopifnot(all.equal(std_err_b123, std_err_b123_ms))
+```
+
 ## 6.c
 
-What is the 95% individual confidence intervala for $\beta_1$, $\beta_2$, and
+What is the 95% individual confidence interval for $\beta_1$, $\beta_2$, and
 $\beta_3$, respectively?
+
+First, calculate the critical t-vallue using $n - 4$ degrees of freedom now
+instead of $n - 2$ since we have two more independent variables than in SLR:
+
+```{r}
+t_crit <- qt(1 - alpha / 2, n - p)
+```
+
+The critical value is the same for all parameters, and we multiply it against
+the standard error of each parameter to get the margin of error for each
+interval. Therefore, the intervals are:
+
+```{r}
+b1 <- model$coefficients["x1"]
+b2 <- model$coefficients["x2"]
+b3 <- model$coefficients["x3"]
+ci_b1 <- c(
+  b1 - t_crit * std_err_b123["x1"], b1 + t_crit * std_err_b123["x1"]
+)
+ci_b2 <- c(
+  b2 - t_crit * std_err_b123["x2"], b2 + t_crit * std_err_b123["x2"]
+)
+ci_b3 <- c(
+  b3 - t_crit * std_err_b123["x3"], b3 + t_crit * std_err_b123["x3"]
+)
+```
+
+$$
+\begin{aligned}
+b_1 \pm t(1 - \alpha/2; n-p) s[b_1] = `r b1` \pm t(1 - `r alpha`/2; `r n` - `r p`) `r std_err_b123["x1"]` &= \mathbf{(`r ci_b1`)} \\
+b_2 \pm t(1 - \alpha/2; n-p) s[b_2] = `r b2` \pm t(1 - `r alpha`/2; `r n` - `r p`) `r std_err_b123["x2"]` &= \mathbf{(`r ci_b2`)} \\
+b_3 \pm t(1 - \alpha/2; n-p) s[b_3] = `r b3` \pm t(1 - `r alpha`/2; `r n` - `r p`) `r std_err_b123["x3"]` &= \mathbf{(`r ci_b3`)} \\
+\end{aligned}
+$$
+
+We can confirm these values using `confint()`:
+
+```{r}
+confint(model)
+```
 
 # Problem 7
 
 In order to perform a global F test for the significance of the MLR model, the
-critical value can be denoted by ______ and has a value of ______. Based on the
-R output, since Fs is ________(> or <) than the critical value, the model is
-________(significant/ insignificant)
+critical value can be denoted by
+
+$$
+F(1 - \alpha, p - 1, n - p)
+$$
+
+and has a value of
+
+```{r}
+f_crit <- qf(1 - alpha, p - 1, n - p)
+```
+
+$$
+F(1 - `r alpha`, `r p` - 1, `r n` - `r p`) = `r f_crit`
+$$
+
+Calculating $F^*$ for the model:
+
+```{r}
+msr <- ssr / (p - 1)
+f_star <- msr / mse
+```
+
+$$
+F^* = \frac{MSR}{MSE} = `r f_star` \gg `r f_crit`
+$$
+
+Based on the R output, since $F^*$ is **greater than** than the critical value,
+the model is **significant**.
+
+This agrees with the $F$ and $p$ values at the bottom of the model summary:
+
+```{r}
+summary(model)
+```
 
 # Problem 8
 
-At the confidence level of 85%,
+At the confidence level of 85%...
+
+```{r}
+alpha <- 0.15
+```
 
 ## 8.a
 
-To calculate the Bonferroni joint confidence intervals for parameters $\beta_1$, $\beta_2$, and $\beta_3$, the critical value is denoted by _______ and has a value of ________
+To calculate the Bonferroni joint confidence intervals for parameters $\beta_1$,
+$\beta_2$, and $\beta_3$, the critical value is denoted by
+
+$$
+B = t\left(1 - \frac{\alpha}{2g}; n - p\right)
+$$
+
+and has a value of
+
+```{r}
+g <- 3
+crit_bonf_params <- qt(1 - alpha / (2 * g), n - p)
+```
+
+$$
+t\left(1 - \frac{`r alpha`}{2 \cdot `r g`}; `r n` - `r p`\right) = `r 
+crit_bonf_params`
+$$
+
 
 ## 8.b
 
-Calculate the Working hoteling joint confidence intervals for parameters
-$\beta_1$, $\beta_2$, and $\beta_3$, the critical value is denoted by _______and has a
-value of ________
+Calculate the Working-Hotelling joint confidence intervals for parameters
+$\beta_1$, $\beta_2$, and $\beta_3$, the critical value is denoted by 
+
+$$
+W = \sqrt{p F(1 - \alpha; p, n - p)}
+$$
+
+and has a value of
+
+```{r}
+w <- sqrt(p * qf(1 - alpha, p, n - p))
+```
+
+$$
+\sqrt{`r p` F(1 - `r alpha`; `r p`, `r n` - `r p`)} = `r w`
+$$
 
 ## 8.c
 
 Which joint confidence interval is better? Briefly explain.
+
+As stated in [1.b], for joint estimation of the *parameters*, the Bonferroni
+interval is better because it yields a smaller critical value: $B = `r 
+crit_bonf_params` < `r w` = W$. This is consistent across all models when we are
+estimating the parameters/weights/coefficients simultaneously for a linear
+model. That is, $W/B > 1$.
 
 # Problem 9
 
 Use R to compute the MLR model $Y \sim X_1 + X_2 + X_3$, model summary, and
 ANOVA table. Then compute the remaining question by hand.
 
+```{r}
+model_summary
+anova_results
+```
+
 ## 9.a
 
 The 85% simultaneous confidence interval on $\beta_1$, $\beta_2$, and $\beta_3$.
 Use both Bonferroni and WH method.
+
+### Bonferroni
+
+```{r}
+ci_b1_joint <- c(
+  b1 - crit_bonf_params * std_err_b123["x1"],
+  b1 + crit_bonf_params * std_err_b123["x1"]
+)
+
+ci_b2_joint <- c(
+  b2 - crit_bonf_params * std_err_b123["x2"],
+  b2 + crit_bonf_params * std_err_b123["x2"]
+)
+
+ci_b3_joint <- c(
+  b3 - crit_bonf_params * std_err_b123["x3"],
+  b3 + crit_bonf_params * std_err_b123["x3"]
+)
+```
+
+$$
+\begin{aligned}
+b_1 \pm t\left(1 - \frac{\alpha}{2g}; n-p \right) s[b_1] = `r b1` \pm t\left(1 - \frac{`r alpha`}{2 \cdot `r g`}; `r n`-`r p`\right) `r std_err_b123["x1"]` &= \mathbf{(`r ci_b1_joint`)} \\
+b_2 \pm t\left(1 - \frac{\alpha}{2g}; n-p \right) s[b_2] = `r b2` \pm t\left(1 - \frac{`r alpha`}{2 \cdot `r g`}; `r n`-`r p`\right) `r std_err_b123["x2"]` &= \mathbf{(`r ci_b2_joint`)} \\
+b_3 \pm t\left(1 - \frac{\alpha}{2g}; n-p \right) s[b_3] = `r b3` \pm t\left(1 - \frac{`r alpha`}{2 \cdot `r g`}; `r n`-`r p`\right) `r std_err_b123["x3"]` &= \mathbf{(`r ci_b3_joint`)} \\
+\end{aligned}
+$$
+
+
+### Working-Hotelling
+
+```{r}
+ci_b1_joint <- c(
+  b1 - w * std_err_b123["x1"],
+  b1 + w * std_err_b123["x1"]
+)
+
+ci_b2_joint <- c(
+  b2 - w * std_err_b123["x2"],
+  b2 + w * std_err_b123["x2"]
+)
+
+ci_b3_joint <- c(
+  b3 - w * std_err_b123["x3"],
+  b3 + w * std_err_b123["x3"]
+)
+```
+
+$$
+\begin{aligned}
+b_1 \pm \sqrt{p F(1 - \alpha; p, n - p)} s[b_1] = `r b1` \pm \sqrt{`r p` F(1 - `r alpha`; `r p`, `r n` - `r p`)} `r std_err_b123["x1"]` &= \mathbf{(`r ci_b1_joint`)} \\
+b_2 \pm \sqrt{p F(1 - \alpha; p, n - p)} s[b_2] = `r b2` \pm \sqrt{`r p` F(1 - `r alpha`; `r p`, `r n` - `r p`)} `r std_err_b123["x2"]` &= \mathbf{(`r ci_b2_joint`)} \\
+b_3 \pm \sqrt{p F(1 - \alpha; p, n - p)} s[b_3] = `r b3` \pm \sqrt{`r p` F(1 - `r alpha`; `r p`, `r n` - `r p`)} `r std_err_b123["x3"]` &= \mathbf{(`r ci_b3_joint`)} \\
+\end{aligned}
+$$
+
 
 ## 9.b
 
 Based on the results in part (a), do you think all three predictors have
 significant impact on $Y$?
 
+Were all three predictors significant, we would expect to see all three
+predictors have nonzero values. If zero falls within in any of the intervals for
+the parameters, then we cannot say that all three predictors have significant
+impact on $Y$.
+
+Since the interval for $\beta_2$ overlaps with $0$ in both intervals, which
+indicates no impact, we cannot say that all three predictors have a
+simultaneously/jointly significant impact on $Y$ at a confidence level of 85%.
+*Some* parameters may have an impact, but we just cannot say that *all three*
+have a *joint* impact.
+
 ## 9.c
 
 The 95% confidence interval for the mean response prediction when $X_1$, $X_2$,
 and $X_3$ each takes the median value in the sample.
+
+```{r}
+alpha <- 0.05
+x_h_df <- data.frame(t(apply(x, 2, median)))
+x_h <- matrix(apply(x, 2, median))
+y_h <- predict(model, newdata = x_h_df)
+
+std_err_y_h <- sqrt(t(x_h) %*% vcov(model) %*% x_h)
+
+t_crit <- qt(1 - alpha / 2, n - p)
+
+ci_y_h <- c(y_h - t_crit * std_err_y_h, y_h + t_crit * std_err_y_h)
+```
+
+The 95% confidence interval for the prediction of the mean response $E[Y_h]$ when
+each $X$ component is the median of the component is:
+
+$$
+\hat{Y}_h \pm t(1 - \alpha / 2; n - p) s[\hat{Y}_h] = `r y_h` \pm t(1 - `r alpha`/ 2; `r n` - `r p`) `r std_err_y_h` = (`r ci_y_h`)
+$$
