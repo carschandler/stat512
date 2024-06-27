@@ -40,7 +40,7 @@ At a confidence level of 95%...
 alpha <- 0.05
 n <- length(y)
 t_crit <- qt(1 - alpha / 2, n - 2)
-b <- qt(1 - alpha / 4, n - 2)
+crit_bonf <- qt(1 - alpha / 4, n - 2)
 ```
 
 To find the individual confidence intervals for $\beta_0$, the critical value is denoted by
@@ -56,9 +56,9 @@ $t(1 - \alpha / 2, n-2)$ and has a value of $t(1 - `r alpha` / 2, `r n` - 2) =
 # 1.c
 
 To calculate the Bonferroni joint confidence intervals for all parameters using
-an $\alpha = 0.05$, the critical value is denoted by $t(1- \frac{\alpha}{2p},
-DFE ) = t(1- \frac{\alpha}{4}, n - 2)$ and has a value of $t(1 - \frac{`r
-alpha`}{4}, `r n` - 2) = `t_crit_bonf`$.
+an $\alpha = 0.05$, the critical value is denoted by $B = t(1- \frac{\alpha}{2p},
+DFE) = t(1- \frac{\alpha}{4}, n - 2)$ and has a value of $t(1 - \frac{`r 
+alpha`}{4}, `r n` - 2) = `r crit_bonf`$.
 
 # 1.d
 
@@ -66,7 +66,8 @@ Calculate the Working-Hotelling joint confidence intervals for all parameters
 using an $\alpha = 0.05$. 
 
 ```{r}
-w <- sqrt(2 * qf(1 - alpha, 2, n - 2))
+p <- 2
+w <- sqrt(p * qf(1 - alpha, p, n - p))
 model <- lm(y ~ x)
 model_summary <- summary(model)
 model_summary
@@ -79,19 +80,20 @@ b0_interval <- c(b0 - w * t0, b0 + w * t0)
 b1_interval <- c(b1 - w * t1, b1 + w * t1)
 ```
 
-The interval for $b_0$ is $(`r b0_interval`)$, and the interval for $b1$ is $(`r 
+The interval for $b_0$ is $(`r b0_interval`)$, and the interval for $b_1$ is $(`r 
 b1_interval`)$
 
 The critical value is denoted by $W = \sqrt{2 F(1 - \alpha; 2, n - 2)}$ and has
-a value of $W = \sqrt{2 F(1 - \alpha; 2, n - 2)}$.
+a value of $W = \sqrt{2 F(1 - \alpha; 2, n - 2)} = \sqrt{2 F(1 - `r alpha`; 2,
+`r n` - 2)} = `r w`$.
 
 # 1.e
 
 Which joint confidence interval is better? Briefly explain
 
 For joint estimation of the *parameters*, the Bonferroni interval is better
-because it yields a smaller critical value: $W = `r w` > `r b` = B$. This is
-consistent across all models when we are estimating the
+because it yields a smaller critical value: $W = `r w` > `r crit_bonf` = B$.
+This is consistent across all models when we are estimating the
 parameters/weights/coefficients simultaneously for a linear model. That is, $W/B
 > 1$.
 
@@ -99,34 +101,368 @@ parameters/weights/coefficients simultaneously for a linear model. That is, $W/B
 
 At the confidence level of 95%...
 
+# TODO check these values with R
+
 ## 2.a
 
-To find the individual confidence interval for the mean response 𝑌௛
-෢, where 𝑋௛ =
-the mean of the sample, the critical value is denoted by ______and has a value of ______, the standard
-error can be computed with the formula ___________and has a value of ________.
+```{r}
+t_crit <- qt(1 - alpha / 2, n - 2)
+mse <- anova(model)["Residuals", "Mean Sq"]
+std_err_mean <- sqrt(mse / n)
+```
+
+To find the individual confidence interval for the mean response $\hat{Y}_h$,
+where $X_h = \text{sample mean}$, the critical value is denoted by 
+
+$$
+t(1 - \alpha/2, n-2) = t(1 - `r alpha` / 2, `r n` - 2)
+$$
+
+and has a value of `r t_crit`, the standard error can be computed with the formula
+
+$$
+s\{\hat{Y}_h\} = \sqrt{MSE\left[ \frac{1}{n} + \frac{(X_h - \bar{X})^2}{\sum(X_i - \bar{X})^2}  \right]} = \sqrt{`r mse` \left[ \frac{1}{`r n`} + 0  \right]}
+$$
+
+and has a value of `r std_err_mean`.
 
 ## 2.b
 
-To find the individual confidence interval for the mean response 𝑌௛
-෢, where 𝑋௛ =
-the median of the sample, the critical value is denoted by ______and has a value of ______, the
-standard error can be computed with the formula ___________and has a value of ________.
+```{r}
+x_h <- median(x)
+xbar <- mean(x)
+sst_x <- sum((x - xbar)^2)
+std_err_median <- sqrt(mse * (1 / n + (x_h - xbar)^2 / sst_x))
+```
+
+To find the individual confidence interval for the mean response $\hat{Y}_h$,
+where $X_h = \text{sample median}$, the critical value is denoted by
+
+$$
+t(1 - \alpha/2, n-2) = t(1 - `r alpha` / 2, `r n` - 2)
+$$
+
+and has a value of `r t_crit`, the standard error can be computed with the
+formula
+
+$$
+s\{\hat{Y}_h\} = \sqrt{MSE\left[ \frac{1}{n} + \frac{(X_h - \bar{X})^2}{\sum(X_i - \bar{X})^2}  \right]} = \sqrt{`r mse` \left[ \frac{1}{`r n`} + \frac{(`r x_h` - `r xbar`)^2}{\sum(X_i - `r xbar`)^2}  \right]}
+$$
+
+and has a value of `r std_err_median`.
 
 ## 2.c
 
-To compute the joint confidence interval for the mean responses for 5 different 𝑋௛ levels
-(data points), the Bonferroni critical value is denoted by ______and has a value of ______; the WH
-critical value is denoted by ______and has a value of _____.
+To compute the joint confidence interval for the mean responses for 5 different
+$X_h$ levels (data points), the Bonferroni critical value is denoted by
+
+$$
+B = t\left(1 - \frac{\alpha}{2g}, n - 2\right)
+$$
+
+and has a value of 
+
+```{r}
+g <- 5
+crit_bonf_5 <- qt(1 - alpha / (2 * g), n - 2)
+```
+
+$$
+t\left(1 - \frac{`r alpha`}{2 * `r g`}, `r n` - 2\right) = `r crit_bonf_5`
+$$
+
+The WH critical value is denoted by 
+
+$$
+W = \sqrt{2 F(1 - \alpha; 2, n - 2)}
+$$
+
+and has a value of 
+
+$$
+W = \sqrt{2 F(1 - \alpha; 2, n - 2)} = \sqrt{2 F(1 - `r alpha`; 2, `r n` - 2)} =
+`r w`
+$$
+
 Which method is better here and why?
-Which method should you suggest if you are not sure what 𝑋 levels are to be predicted?
+
+For joint estimation of the *mean response* of 5 values, the Working-Hotelling
+interval is better because it yields a smaller critical value: $W = `r w` < `r 
+crit_bonf_5` = B$. Working-Hotelling gives a better estimate than Bonferroni any
+time $g \ge 3$.
+
+Which method should you suggest if you are not sure what $X_h$ levels are to be
+predicted?
+
+When the $X_h$ levels are not known, it is better to use the Working-Hotelling
+method since it yields the same interval for all levels of $X_h$ while the
+Bonferroni method changes with the number of levels, $g$.
 
 ## 2.d
 
-To calculate the Bonferroni joint confidence interval for the single response prediction at 3 𝑋௛
-levels, the critical value is denoted by ______and has a value of ______,
+To calculate the Bonferroni joint confidence interval for the single response
+prediction at 3 $X_h$ levels, the critical value is denoted by
+
+$$
+B = t\left(1 - \frac{\alpha}{2g}, n - 2\right)
+$$
+
+and has a value of
+
+```{r}
+g <- 3
+crit_bonf_3 <- qt(1 - alpha / (2 * g), n - 2)
+```
+
+$$
+t\left(1 - \frac{`r alpha`}{2 * `r g`}, `r n` - 2\right) = `r crit_bonf_5`
+$$
 
 ## 2.e
 
-To calculate the Scheffe joint confidence interval for the single response predictions at 3 𝑋௛
-levels, the critical value is denoted by ______and has a value of ______,
+To calculate the Scheffe joint confidence interval for the single response
+predictions at 3 $X_h$ levels, the critical value is denoted by 
+
+$$
+S = \sqrt{gF(1 - \alpha; g, n - 2)}
+$$
+
+and has a value of 
+
+```{r}
+crit_scheffe_3 <- qf(1 - alpha, g, n - 2)
+```
+
+$$
+S = \sqrt{`r g` F(1 - `r alpha`; `r g`, `r n` - 2)} = `r crit_scheffe_3`
+$$
+
+# MLR Setup
+
+For Problems 3-8, consider a multiple linear regression (MLR) model where $Y
+\sim X_1 + X_2 + X_3$ in the life expectancy data.
+
+```{r}
+model <- lm(y ~ x1 + x2 + x3)
+```
+
+# Problem 3
+
+Use R to complete the response value vector, $\mathbf{Y}$ and the design matrix
+$\mathbf{X}$, hat matrix $\mathbf{H}$, and the parameter matrix
+$\mathbf{\beta}$. Use correct matrix notations and type all general formulas
+clearly, show R code and output. Note that partial results are allowed for large
+matrix output such as $\mathbf{Y}$, $\mathbf{X}$, and $\mathbf{H}$, but make
+sure to describe the dimension of all matrices. Then compute the SS terms with
+the following matrix operation.
+
+The response value vector $\mathbf{Y}$ is $`r head(y)`\ ...\ `r tail(y)`$ with
+dimension $(`r n`)$.
+
+The design matrix $\mathbf{X}$ is
+
+# TODO: latex-print matrices?
+https://stackoverflow.com/a/54156115
+
+```{r}
+x <- cbind(1, x1, x2, x3)
+head(x)
+tail(x)
+```
+
+with dimension $(`r dim(x)`)$.
+
+The hat matrix $H$ is:
+
+```{r}
+hat <- x %*% solve(t(x) %*% x) %*% t(x)
+# TODO: figure out how to show this
+# head(hat)
+# tail(hat)
+```
+
+with dimension $(`r dim(hat)`)$.
+
+The parameter matrix $\mathbf{\beta}$ is
+
+$$
+\mathbf{\beta} =
+\begin{bmatrix}
+\beta_0 \\
+\beta_1 \\
+\beta_2 \\
+\beta_3
+\end{bmatrix}
+$$
+
+which is estimated by $\mathbf{b}$, which for this model has a value of
+
+```{r}
+b <- matrix(model$coefficients)
+```
+
+$$
+\mathbf{b} = [`r b`]
+$$
+
+with dimension $(`r dim(b)`)$.
+
+We can compute the different sum of squares terms as follows:
+
+```{r}
+j <- matrix(1, n, n)
+ssm <- t(y) %*% (hat - j / n) %*% y
+
+i <- diag(n)
+sse <- t(y) %*% (i - hat) %*% y
+
+sst <- t(y) %*% (i - j / n) %*% y
+```
+
+$$
+SSM = (\hat{Y}_{i} - \bar{Y})^{2} = b' X' Y - \frac{1}{n}Y'JY = Y'\left[ H -
+\frac{J}{n} \right] Y = `r ssm`
+$$
+
+$$
+SSE = (Y_{i} - \hat{Y}_{i})^{2} = e'e = (Y - Xb)' (Y - Xb) = Y'Y -b'X'Y = Y'(I -
+H)Y = `r sse`
+$$
+
+
+$$
+SST = (Y_{i} - \bar{Y})^{2} = Y'Y - \frac{1}{n} Y' J Y  = Y' \left[ I - 
+\frac{J}{n} \right] Y = `r sst`
+$$
+
+# Problem 4
+
+Use R to complete the ANOVA table and verify your computation in Problem 3.
+
+```{r}
+anova_results <- anova(model)
+anova_results
+```
+
+We can verify $SSM$ by summing the `x1`, `x2`, and `x3` rows of the `Sum Sq`
+column of our ANOVA results and asserting that the sum is equal to the value
+calculated in [Problem 3].
+
+```{r}
+ssm_anova <- sum(anova_results[c("x1", "x2", "x3"), "Sum Sq"])
+
+print(paste("SSM from ANOVA:", ssm_anova))
+print(paste("SSM from matrix algebra:", ssm))
+
+stopifnot(
+  all.equal(drop(ssm), ssm_anova)
+)
+```
+
+We can verify $SSE$ by checking the `Residuals` row of the `Sum Sq` column:
+
+```{r}
+sse_anova <- anova_results["Residuals", "Sum Sq"]
+
+print(paste("SSE from ANOVA:", sse_anova))
+print(paste("SSE from matrix algebra:", sse))
+
+stopifnot(
+  all.equal(drop(sse), sse_anova)
+)
+```
+
+We can verify $SST$ by summing the entire `Sum Sq` column:
+
+```{r}
+sst_anova <- sum(anova_results[, "Sum Sq"])
+
+print(paste("SSE from ANOVA:", sst_anova))
+print(paste("SSE from matrix algebra:", sst))
+
+stopifnot(
+  all.equal(drop(sst), sst_anova)
+)
+```
+
+# Problem 5
+
+Use R to compute the variance-covariance matrix of the residuals $\sum e$, where
+$\sum e = \sigma^2(I - H)$, and $\sigma^2$ can be estimated by $MSE$. Note that
+this reflects the actual variance-covariance of the residual. The less
+assumption violation there is, the closer this matrix is to the
+variance-covariance matrix of the random error.
+
+## 5.a
+
+What is the dimension of the matrix?
+
+## 5.b
+
+Under assumption of independence and constant variance, what is the
+variance-covariance matrix of the random error $\sum \varepsilon$?
+
+# TODO is this just supposed to be $e$ above instead of $\varepsilon$?
+
+# Problem 6
+
+Use R to compute the variance-covariance matrix of the parameters $\sum b$, where
+$\sum b = \sigma^2 (X'X)^-1$, and $\sigma^2$ can be estimated by $MSE$.
+
+## 6.a
+
+What is the dimension of the matrix?
+
+## 6.b
+
+What is the standard error of $b_1$, $b_2$, and $b_3$?
+
+## 6.c
+
+What is the 95% individual confidence intervala for $\beta_1$, $\beta_2$, and
+$\beta_3$, respectively?
+
+# Problem 7
+
+In order to perform a global F test for the significance of the MLR model, the
+critical value can be denoted by ______ and has a value of ______. Based on the
+R output, since Fs is ________(> or <) than the critical value, the model is
+________(significant/ insignificant)
+
+# Problem 8
+
+At the confidence level of 85%,
+
+## 8.a
+
+To calculate the Bonferroni joint confidence intervals for parameters $\beta_1$, $\beta_2$, and $\beta_3$, the critical value is denoted by _______ and has a value of ________
+
+## 8.b
+
+Calculate the Working hoteling joint confidence intervals for parameters
+$\beta_1$, $\beta_2$, and $\beta_3$, the critical value is denoted by _______and has a
+value of ________
+
+## 8.c
+
+Which joint confidence interval is better? Briefly explain.
+
+# Problem 9
+
+Use R to compute the MLR model $Y \sim X_1 + X_2 + X_3$, model summary, and
+ANOVA table. Then compute the remaining question by hand.
+
+## 9.a
+
+The 85% simultaneous confidence interval on $\beta_1$, $\beta_2$, and $\beta_3$.
+Use both Bonferroni and WH method.
+
+## 9.b
+
+Based on the results in part (a), do you think all three predictors have
+significant impact on $Y$?
+
+## 9.c
+
+The 95% confidence interval for the mean response prediction when $X_1$, $X_2$,
+and $X_3$ each takes the median value in the sample.
