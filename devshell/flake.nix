@@ -33,6 +33,8 @@
             pkgs.rPackages.SuppDists
             pkgs.rPackages.rmarkdown
             pkgs.rPackages.ggplot2
+            pkgs.rPackages.lm_beta
+            pkgs.rPackages.car
             # pkgs.rstudio
             pkgs.texliveFull
             pkgs.pandoc

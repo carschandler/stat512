@@ -1,0 +1,543 @@
+---
+title: "HW4"
+author: "Robert Chandler"
+email: "chandl71@purdue.edu"
+date: "2024-06-07"
+output:
+  pdf_document: default
+---
+
+# Setup
+Begin by reading the dataset for this set of problems:
+
+```{r setup}
+le <- read.csv("../../datasets/life_expectancy.csv")
+```
+
+```{r}
+y <- le$X2015Life.expectancy
+x1 <- le$Medical.doctors
+x2 <- le$Nurses
+x3 <- le$Pharmacists
+```
+
+# Problem 1
+
+Complete this question with only the two ANOVA tables for $Y \sim X_1 + X_2 + X_3$,
+$Y \sim X_1$ generated in R.
+
+## 1.a
+
+Compute the following using the appropriate formulas of ESS and SS terms. For terms that
+can be found directly on the R output, please highlight them.
+
+First, compute the ANOVA tables for each of the models specified:
+
+SLR ANOVA table:
+
+```{r}
+model_slr <- lm(y ~ x1)
+anova_slr <- anova(model_slr)
+anova_slr
+```
+
+MLR ANOVA table:
+
+```{r}
+model_mlr <- lm(y ~ x1 + x2 + x3)
+anova_mlr <- anova(model_mlr)
+anova_mlr
+```
+
+### 1.a.i
+
+$SSR(X_1)$ can be found directly from the `x1` row of the `Sum Sq` column of the
+SLR ANOVA table above.
+
+```{r}
+ssr_x1 <- anova_slr["x1", "Sum Sq"]
+```
+
+$$
+SSR(X_1) = `r ssr_x1`
+$$
+
+### 1.a.ii
+
+$SSE(X_1)$ can be found directly from the `Residuals` row of the `Sum Sq` column of the
+SLR ANOVA table above.
+
+```{r}
+sse_x1 <- anova_slr["Residuals", "Sum Sq"]
+```
+
+$$
+SSE(X_1) = `r sse_x1`
+$$
+
+### 1.a.iii
+
+$SSR(X_2 | X_1)$ can be found using the equation:
+
+$$
+SSR(X_2 | X_1) = SSR(X_1, X_2) - SSR(X_1)
+$$
+
+We already found $SSR(X_1)$ above, and we can find $SSR(X_1, X_2)$ by summing
+the `x1` and `x2` rows of the `Sum Sq` columns in the MLR ANOVA table above:
+
+```{r}
+ssr_x12 <- sum(anova_mlr[c("x1", "x2"), "Sum Sq"])
+ssr_x2_x1 <- ssr_x12 - ssr_x1
+```
+
+So
+
+$$
+SSR(X_2 | X_1) = `r ssr_x12` - `r ssr_x1` = `r ssr_x2_x1`
+$$
+
+<!-- 
+$$
+\begin{aligned}
+SSR(X_1, X_2, X_3) &= SSR(X_1) + SSR(X_2 | X_1) + SSR(X_3 | X_1, X_2) \\
+SSR(X_2 | X_1) &= SSR(X_1, X_2, X_3) - SSR(X_1) - SSR(X_3 | X_1, X_2)
+\end{aligned}
+$$
+
+We already know $SSR(X_1) = `r ssr_x1`$, and we can find $SSR(X_1, X_2, X_3)$ by
+summing the `x1`, `x2`, `x3` rows of the `Sum Sq` of the MLR ANOVA table above:
+
+```{r}
+ssr_x123 <- sum(anova_mlr[c("x1", "x2", "x3"), "Sum Sq"])
+```
+
+$$
+SSR(X_1, X_2, X_3) = `r ssr_x123`
+$$
+
+So then we just need $SSR(X_3 | X_1, X_2)$.
+
+From Equation (7.15), we know that the general linear test statistic for the
+hypotheses:
+
+$$
+\begin{gathered}
+H_0: \beta_3 = 0 \\
+H_a: \beta_3 \ne 0
+\end{gathered}
+$$
+
+is
+
+$$
+F^* = \frac{SSR(X_3 | X_1, X_2)}{1} \div \frac{SSE(X_1, X_2, X_3)}{n-4}
+$$
+
+and this $F^*$ is the same value in the `x3` row of the `F value` column of the
+MLR ANOVA table above:
+
+```{r}
+f_star_3 <- anova_mlr["x3", "F value"]
+```
+
+So $F^* = `r f_star_3`$. We can find $SSE(X_1, X_2, X_3)$ at the `Residuals` row
+of the `Sum Sq` column of the MLR ANOVA table above:
+
+```{r}
+sse_x123 <- anova_mlr["Residuals", "Sum Sq"]
+```
+
+So $SSE(X_1, X_2, X_3) = `r sse_x123`$, and now we can solve for $SSR(X_3 | X_1,
+X_2)$:
+
+```{r}
+n <- length(y)
+ssr_x3_x12 <- f_star_3 * sse_x123 / (n - 4)
+```
+
+$$
+\begin{aligned}
+F^* &= \frac{SSR(X_3 | X_1, X_2)}{1} \div \frac{SSE(X_1, X_2, X_3)}{n-4} \\
+SSR(X_3 | X_1, X_2) &= F^* \frac{SSE(X_1, X_2, X_3)}{n-4} \\
+SSR(X_3 | X_1, X_2) &= `r f_star_3` \frac{`r sse_x123`}{`r n`-4} \\
+SSR(X_3 | X_1, X_2) &= `r ssr_x3_x12` \\
+\end{aligned}
+$$
+
+Finally, we can substitute this value to solve:
+
+```{r}
+ssr_x2_x1 <- ssr_x123 - ssr_x1 - ssr_x3_x12
+```
+
+$$
+\begin{aligned}
+SSR(X_2 | X_1) &= SSR(X_1, X_2, X_3) - SSR(X_1) - SSR(X_3 | X_1, X_2) \\
+SSR(X_2 | X_1) &= `r ssr_x123` - `ssr_x1` - `ssr_x3_x12` \\
+SSR(X_2 | X_1) &= \mathbf{`r ssr_x2_x1`} \\
+\end{aligned}
+$$
+-->
+
+### 1.a.iv
+
+$SSE(X_2 | X_1)$ is equivalent to $SSR(X_2 | X_1)$ as discussed in the lecture
+notes. This is proven by starting with $SSE(X_2 | X_1) = SSE(X_1) - SSE(X_1, X_2)$, and
+then the latter term is:
+
+$$
+SSE(X_1, X_2) = SSTO - SSR(X_1, X_2) = SSE(X_1) + SSR(X_1) - SSR(X_1, X_2)
+$$
+
+so
+
+$$
+\begin{aligned}
+SSE(X_2 | X_1) &= SSE(X_1) - (SSE(X_1) + SSR(X_1) - SSR(X_1, X_2)) \\
+&= SSR(X_1, X_2) - SSR(X_1) \\
+&= SSR(X_2 | X_1)
+\end{aligned}
+$$
+
+Therefore,
+
+$$
+SSE(X_2 | X_1) = `r ssr_x2_x1`
+$$
+
+### 1.a.v
+
+We already found $SSR(X_1, X_2)$ in [1.a.iii] by summing the `x1` and `x2` rows of the `Sum
+Sq` columns in the MLR ANOVA table above:
+
+$$
+SSR(X_1, X_2) = `r ssr_x12`
+$$
+
+### 1.a.vi
+
+We can find $SSE(X_1, X_2)$ using the following equation:
+
+```{r}
+ssto <- sse_x1 + ssr_x1
+sse_x12 <- ssto - ssr_x12
+```
+
+
+
+$$
+SSE(X_1, X_2) = SSTO - SSR(X_1, X_2)
+$$
+
+where we can find $SSTO$ from the sum 
+
+$$
+SSTO = SSR(X_1) + SSE(X_1) = `r ssto`
+$$
+
+so then
+
+$$
+SSE(X_1, X_2) = `r ssto` - `r ssr_x12` = `r sse_x12`
+$$
+
+## 1.b
+
+Test whether $X_2$ can be dropped from a model with $X_1$ (i.e., the marginal
+effect of $X_2$). Define $H_0, H_a$, compute the test statistic, denote and
+define the critical value, and state the conclusion.
+
+The hypotheses are:
+
+$$
+\begin{gathered}
+H_0: \beta_2 = 0 \\
+H_a: \beta_2 \ne 0
+\end{gathered}
+$$
+
+**assuming that the model already contains $X_1$.**
+
+This makes the full model:
+
+$$
+Y_i = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \varepsilon_i
+$$
+
+and the reduced model
+
+$$
+Y_i = \beta_0 + \beta_1 X_{i1} + \varepsilon_i
+$$
+
+So, the general linear test statistic is:
+
+```{r}
+f_star_x2_x1 <- ssr_x2_x1 / (sse_x12 / (n - 3))
+```
+
+$$
+\begin{aligned}
+F^* &= \frac{SSR(X_2 | X_1)}{1} \div \frac{SSE(X_1, X_2)}{n - 3} \\
+F^* &= `r ssr_x2_x1` \div \frac{sse_x12}{`r n` - 3} \\
+F^* &= `r f_star_x2_x1`
+\end{aligned}
+$$
+
+Assuming $\alpha = 0.05$, the critical value is:
+
+```{r}
+alpha <- 0.05
+p_reduced <- 2
+p_full <- 3
+df_reduced <- n - p_reduced
+df_full <- n - p_full
+f_crit <- qf(1 - alpha, df_reduced - df_full, df_full)
+```
+
+$$
+F(1 - \alpha; df_R - df_F; df_F) = F(1 - `r alpha`; `r df_reduced - df_full`;
+`r df_full`) = `r f_crit` < `r f_star_x2_x1` = F^*
+$$
+
+Therefore, we reject $H_0$ and conclude that $X_2$ cannot be dropped from a
+model with $X_1$.
+
+## 1.c
+
+Test whether $X_1$, when used alone, has any significant linear impact on $Y$.
+Define $H_0, H_a$, compute the test statistic, denote and define the critical
+value, and state the conclusion.
+
+The hypotheses are:
+
+$$
+\begin{gathered}
+H_0: \beta_1 = 0 \\
+H_a: \beta_1 \ne 0
+\end{gathered}
+$$
+
+**assuming that the model does not already contain any other variables.**
+
+This makes the full model:
+
+$$
+Y_i = \beta_0 + \beta_1 X_{i1} + \varepsilon_i
+$$
+
+and the reduced model
+
+$$
+Y_i = \beta_0 + \varepsilon_i
+$$
+
+So, the general linear test statistic is:
+
+```{r}
+f_star_x1 <- ssr_x1 / (sse_x1 / (n - 2))
+```
+
+$$
+\begin{aligned}
+F^* &= \frac{SSR(X_1)}{1} \div \frac{SSE(X_1)}{n - 2} \\
+F^* &= `r ssr_x1` \div \frac{sse_x1}{`r n` - 2} \\
+F^* &= `r f_star_x1`
+\end{aligned}
+$$
+
+Assuming $\alpha = 0.05$, the critical value is:
+
+```{r}
+p_reduced <- 1
+p_full <- 2
+df_reduced <- n - p_reduced
+df_full <- n - p_full
+f_crit <- qf(1 - alpha, df_reduced - df_full, df_full)
+```
+
+$$
+F(1 - \alpha; df_R - df_F; df_F) = F(1 - `r alpha`; `r df_reduced - df_full`;
+`r df_full`) = `r f_crit` < `r f_star_x1` = F^*
+$$
+
+Therefore, we reject $H_0$ and conclude that $X_1$, when used alone, does have a
+significant linear impact on $Y$.
+
+
+## 1.d
+
+Test whether $X_2$ and $X_3$ can be dropped from a model with $X_1$. Define
+$H_0, H_a$, compute the test statistic, denote and define the critical value,
+and state the conclusion.
+
+The hypotheses are:
+
+$$
+\begin{gathered}
+H_0: \beta_2 = \beta_3 = 0 \\
+H_a: \beta_2 \ne 0 \text{ or } \beta_3 \ne 0 \\
+\end{gathered}
+$$
+
+**assuming that the model already contains $X_1$.**
+
+This makes the full model:
+
+$$
+Y_i = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \beta_3 X_{i3} + \varepsilon_i
+$$
+
+and the reduced model
+
+$$
+Y_i = \beta_0 + \beta_1 X_{i1} + \varepsilon_i
+$$
+
+So, the general linear test statistic is:
+
+```{r}
+p_reduced <- 2
+p_full <- 4
+df_reduced <- n - p_reduced
+df_full <- n - p_full
+ssr_x23_x1 <- sum(anova_mlr[c("x2", "x3"), "Sum Sq"])
+f_star_x23_x1 <- (
+  (ssr_x23_x1 / (df_reduced - df_full))
+  / (sse_x123 / (df_full))
+)
+```
+
+$$
+\begin{aligned}
+F^* &= \frac{SSR(X_2, X_3 | X_1)}{df_R - df_F} \div \frac{SSE(X_1, X_2, X_3)}{n - df_F} \\
+F^* &= \frac{`r ssr_x23_x1`}{`r df_reduced - df_full`} \div \frac{`r sse_x123`}{`r n - df_full`} \\
+F^* &= `r f_star_x23_x1`
+\end{aligned}
+$$
+
+Assuming $\alpha = 0.05$, the critical value is:
+
+```{r}
+f_crit <- qf(1 - alpha, df_reduced - df_full, df_full)
+```
+
+$$
+F(1 - \alpha; df_R - df_F; df_F) = F(1 - `r alpha`; `r df_reduced - df_full`;
+`r df_full`) = `r f_crit` < `r f_star_x23_x1` = F^*
+$$
+
+Therefore, we reject $H_0$ and conclude that $X_2$ and $X_3$ cannot both be
+dropped from a model with $X_1$.
+
+# Problem 2
+
+Use R to find the ANOVA table for $Y \sim X_1 + X_2 + X_3$, then...
+
+```{r}
+anova_mlr
+```
+
+## 2.a
+
+Compute the coefficient of partial determination of $X_2$ given $X_1$ is
+included in the model.
+
+Using the ANOVA table above:
+
+```{r}
+ssr_x1 <- anova_mlr["x1", "Sum Sq"]
+ssr_x12 <- sum(anova_mlr[c("x1", "x2"), "Sum Sq"])
+ssr_x2_x1 <- ssr_x12 - ssr_x1
+ssto <- sum(anova_mlr[, "Sum Sq"])
+sse_x1 <- ssto - ssr_x1
+r_sq_2_1 <- ssr_x2_x1 / sse_x1
+```
+
+$$
+R^2_{Y2|1} = \frac{SSR(X_2 | X_1)}{SSE(X_1)} = \frac{`r ssr_x2_x1`}{`r sse_x1`}
+= `r r_sq_2_1`
+$$
+
+## 2.b
+
+Compute the coefficient of partial determination of $X_3$ given $X_1$ and $X_2$
+are included in the model.
+
+```{r}
+ssr_x3_x12 <- anova_mlr["x3", "Sum Sq"]
+sse_x12 <- ssto - ssr_x12
+r_sq_3_12 <- ssr_x3_x12 / sse_x12
+```
+
+$$
+R^2_{Y3|12} = \frac{SSR(X_3 | X_1, X_2)}{SSE(X_1, X_2)} = 
+\frac{`r ssr_x3_x12`}{`r sse_x12`} = `r r_sq_3_12`
+$$
+
+
+# Problem 3
+
+Analyze the multicollinearity in the MLR $Y \sim X_1 + X_2 + X_3$.
+
+## 3.a
+
+Use R to compute the linear correlation coefficient between each pair of the
+predictors, show the pairwise scatter plot, and comment on the level of
+multicollinearity.
+
+Correlation matrix showing the linear correlation coefficient between each pair
+of the predictors:
+```{r}
+df <- data.frame(y, x1, x2, x3)
+cm <- cor(df)
+cm
+```
+
+Pairwise scatter plot:
+```{r}
+plot(df)
+```
+
+The correlation matrix shows that the predictors are all fairly positively
+correlated with one another, with the lowest correlation coefficient being
+$`r cm["x2", "x3"]`$ between $X_2$ and $X_3$ and the highest being
+$`r cm["x1", "x2"]`$ between $X_1$ and $X_2$. The scatter plots agree with this,
+showing an obvious positive linear correlation between each of the predictor
+variables, the strongest being between $X_1$ and $X_2$.
+
+In conclusion, there is certainly a fair amount of multicollinearity since the
+predictor variables are consistently correlated amongst themselves at
+significant levels. This makes sense, considering that we would expect the number
+of doctors, pharmacists, and nurses to increase in tandem with each other; it
+wouldn't make sense to have a very large number of doctors in a country but then
+only have a very small number of nurses.
+
+## 3.b
+
+Use R to compute the Type I and II ANOVA table, compare and then comment on the
+level of multicollinearity.
+
+### Type I ANOVA table
+
+```{r}
+anova_mlr
+```
+
+### Type II ANOVA table
+
+```{r}
+library(car)
+Anova(model_mlr, type = "II")
+```
+
+
+
+
+## Problem 4
+
+Use R to conduct a General Linear Test (GLT) to investigate whether $X_1$,
+$X_2$, and $X_3$ have an equivalent linear effect on $Y$. Specify $H_0, H_a$,
+establish a Reduced model and a Full model, calculate the test statistic,
+determine the critical value, calculate the p-value, and state your conclusion.
