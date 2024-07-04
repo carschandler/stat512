@@ -8,10 +8,98 @@ output:
 ---
 
 # Setup
-Begin by reading the dataset for this set of problems:
 
 ```{r setup}
+# Read dataset
 le <- read.csv("../../datasets/life_expectancy.csv")
+
+matrix_string_list <- function(
+    matrix,
+    inline = FALSE,
+    maxrows = 7,
+    maxcols = 7,
+    show_dimension = NULL) {
+  nrows <- nrow(matrix)
+  ncols <- ncol(matrix)
+
+  begin <- "\\begin{bmatrix}"
+
+  if (is.null(show_dimension)) {
+    if (nrows > maxrows || ncols > maxcols) {
+      show_dimension <- TRUE
+    } else {
+      show_dimension <- FALSE
+    }
+  }
+
+  dimension_string <- if (show_dimension) {
+    paste(
+      "_{", nrows, " \\times ", ncols, "}",
+      sep = ""
+    )
+  } else {
+    ""
+  }
+
+  end <- paste("\\end{bmatrix}", dimension_string, sep = "")
+
+  if (!inline) {
+    begin <- c("$$", begin)
+    end <- c(end, "$$")
+  }
+
+  if (nrows > maxrows) {
+    matrix <- matrix[c(seq_len(maxrows - 1), nrows), ]
+  }
+
+  matrix_strings <- apply(matrix, 1, function(row) {
+    str <- if (length(row) > maxcols) {
+      paste(
+        c(
+          row[seq_len(maxcols - 1)],
+          "\\dots",
+          tail(row, 1)
+        ),
+        collapse = " & "
+      )
+    } else {
+      paste(row, collapse = " & ")
+    }
+
+    str <- paste(str, "\\\\")
+  })
+
+  if (nrows > maxrows) {
+    dots <- rep("\\vdots", min(ncols, maxcols))
+    if (ncols > maxcols) {
+      dots <- append(dots, "\\ddots", length(dots) - 1)
+    }
+    dots_string <- paste(paste(dots, collapse = " & "), "\\\\")
+    matrix_strings <- append(
+      matrix_strings, dots_string, length(matrix_strings) - 1
+    )
+  }
+
+  c(begin, matrix_strings, end)
+}
+
+print_matrix <- function(matrix, maxrows = 10, maxcols = 10) {
+  writeLines(matrix_string_list(
+    matrix,
+    inline = FALSE, maxrows = maxrows, maxcols = maxcols
+  ))
+}
+
+matrix_string <- function(
+    matrix, maxrows = 7, maxcols = 7, show_dimension = NULL) {
+  paste(matrix_string_list(
+    matrix,
+    inline = TRUE, maxrows = maxrows, maxcols = maxcols, show_dimension =
+      show_dimension
+  ), collapse = "\n")
+}
+
+# Utility function for latex-printing matrices
 ```
 
 ```{r}
@@ -91,17 +179,15 @@ a value of $W = \sqrt{2 F(1 - \alpha; p, n - p)} = \sqrt{2 F(1 - `r alpha`; `r p
 
 Which joint confidence interval is better? Briefly explain
 
-For joint estimation of the *parameters*, the Bonferroni interval is better
-because it yields a smaller critical value: $B = `r crit_bonf` < `r w` = W$.
-This is consistent across all models when we are estimating the
+For joint estimation of the *parameters*, the Bonferroni interval is better when
+$n - p \ge 2$ because it yields a smaller critical value: $B = `r crit_bonf` <
+`r w` = W$. This is consistent across all models when we are estimating the
 parameters/weights/coefficients simultaneously for a linear model. That is, $W/B
 > 1$.
 
 # Problem 2
 
 At the confidence level of 95%...
-
-# TODO check these values with R
 
 ## 2.a
 
@@ -262,27 +348,25 @@ dimension $(`r n`)$.
 
 The design matrix $\mathbf{X}$ is
 
-# TODO: latex-print matrices?
-https://stackoverflow.com/a/54156115
-
 ```{r}
 x <- cbind(1, x1, x2, x3)
-head(x)
-tail(x)
 ```
 
-with dimension $(`r dim(x)`)$.
+$$
+`r matrix_string(x)`
+$$
+
+Dimensions are shown in the subscript.
 
 The hat matrix $H$ is:
 
 ```{r}
 hat <- x %*% solve(t(x) %*% x) %*% t(x)
-# TODO: figure out how to show this
-# head(hat)
-# tail(hat)
 ```
 
-with dimension $(`r dim(hat)`)$.
+$$
+`r matrix_string(round(hat, 3))`
+$$
 
 The parameter matrix $\mathbf{\beta}$ is
 
@@ -303,7 +387,7 @@ b <- matrix(model$coefficients)
 ```
 
 $$
-\mathbf{b} = [`r b`]
+\mathbf{b} = [`r b`]'
 $$
 
 with dimension $(`r dim(b)`)$.
@@ -345,6 +429,8 @@ anova_results <- anova(model)
 anova_results
 ```
 
+## $SSR$
+
 We can verify $SSR$ by summing the `x1`, `x2`, and `x3` rows of the `Sum Sq`
 column of our ANOVA results and asserting that the sum is equal to the value
 calculated in [Problem 3].
@@ -355,10 +441,10 @@ ssr_anova <- sum(anova_results[c("x1", "x2", "x3"), "Sum Sq"])
 print(paste("SSR from ANOVA:", ssr_anova))
 print(paste("SSR from matrix algebra:", ssr))
 
-stopifnot(
-  all.equal(drop(ssr), ssr_anova)
-)
+stopifnot(all.equal(drop(ssr), ssr_anova))
 ```
+
+## $SSE$
 
 We can verify $SSE$ by checking the `Residuals` row of the `Sum Sq` column:
 
@@ -368,10 +454,10 @@ sse_anova <- anova_results["Residuals", "Sum Sq"]
 print(paste("SSE from ANOVA:", sse_anova))
 print(paste("SSE from matrix algebra:", sse))
 
-stopifnot(
-  all.equal(drop(sse), sse_anova)
-)
+stopifnot(all.equal(drop(sse), sse_anova))
 ```
+
+## $SST$
 
 We can verify $SST$ by summing the entire `Sum Sq` column:
 
@@ -381,9 +467,7 @@ sst_anova <- sum(anova_results[, "Sum Sq"])
 print(paste("SSE from ANOVA:", sst_anova))
 print(paste("SSE from matrix algebra:", sst))
 
-stopifnot(
-  all.equal(drop(sst), sst_anova)
-)
+stopifnot(all.equal(drop(sst), sst_anova))
 ```
 
 # Problem 5
@@ -399,8 +483,9 @@ mse <- anova_results["Residuals", "Mean Sq"]
 cov <- mse * (i - hat)
 ```
 
-# TODO display matrix
-
+$$
+\Sigma[\mathbf{e}] = `r matrix_string(round(cov, 3))`
+$$
 
 ## 5.a
 
@@ -413,9 +498,9 @@ The dimension is $(`r dim(cov)`)$.
 Under assumption of independence and constant variance, what is the
 variance-covariance matrix of the random error $\Sigma[\varepsilon]$?
 
-If the variables are independent, then their covariance is $\mathbf{0}$.
-
-# TODO is this just supposed to be $e$ above instead of $\varepsilon$?
+If the variables are independent, then their covariances would all be zero, so
+all of the off-diagonal elements of the matrix would be zero, and the diagonal
+elements would all be equal to the constant variance value.
 
 # Problem 6
 
@@ -427,8 +512,9 @@ $\sigma^2$ can be estimated by $MSE$.
 cov_b <- mse * solve(t(x) %*% x)
 ```
 
-# TODO print matrix
-
+$$
+\Sigma[\mathbf{b}] = `r matrix_string(round(cov_b, 3))`
+$$
 
 ## 6.a
 
@@ -596,11 +682,11 @@ $$
 
 Which joint confidence interval is better? Briefly explain.
 
-As stated in [1.b], for joint estimation of the *parameters*, the Bonferroni
-interval is better because it yields a smaller critical value: $B = `r 
-crit_bonf_params` < `r w` = W$. This is consistent across all models when we are
-estimating the parameters/weights/coefficients simultaneously for a linear
-model. That is, $W/B > 1$.
+As stated in [1.e], for joint estimation of the *parameters*, the Bonferroni
+interval is better when $n - p \ge 2$ because it yields a smaller critical
+value: $B = `r crit_bonf_params` < `r w` = W$. This is consistent across all
+models when we are estimating the parameters/weights/coefficients simultaneously
+for a linear model. That is, $W/B > 1$.
 
 # Problem 9
 
@@ -678,13 +764,13 @@ $$
 Based on the results in part (a), do you think all three predictors have
 significant impact on $Y$?
 
-Were all three predictors significant, we would expect to see all three
-predictors have nonzero values. If zero falls within in any of the intervals for
-the parameters, then we cannot say that all three predictors have significant
-impact on $Y$.
+If all three predictors have a significant impact on $Y$, we would expect to see
+all three predictors have nonzero values. If zero falls within in any of the
+intervals for the parameters, then we cannot say that all three predictors have
+significant impact on $Y$.
 
-Since the interval for $\beta_2$ overlaps with $0$ in both intervals, which
-indicates no impact, we cannot say that all three predictors have a
+Since the interval for $\beta_2$ overlaps with $0$ in both intervals calculated
+above, which indicates no impact, we cannot say that all three predictors have a
 simultaneously/jointly significant impact on $Y$ at a confidence level of 85%.
 *Some* parameters may have an impact, but we just cannot say that *all three*
 have a *joint* impact.
@@ -713,3 +799,10 @@ each $X$ component is the median of the component is:
 $$
 \hat{Y}_h \pm t(1 - \alpha / 2; n - p) s[\hat{Y}_h] = `r y_h` \pm t(1 - `r alpha`/ 2; `r n` - `r p`) `r std_err_y_h` = (`r ci_y_h`)
 $$
+
+We can confirm this against the output from `ci.reg()`:
+
+```{r}
+ci.reg(model, newdata = x_h_df)
+```
+
