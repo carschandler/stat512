@@ -1,0 +1,13 @@
+`summary(model)`:
+
+- The coefficients $b0, b1$
+- Standard errors of the coefficients: estimates standard deviation of the
+sampling distribution of $b1$. In other words, it is the "spread" of the values
+we would get when repeatedly sampling $b_1$ while holding the level of $X$
+constant
+- t-values: the test statistic for the distribution that holds under the null
+hypothesis that $X$ has no impact on $Y$, which is to say that $\beta_1 = 0$.
+- p-values: probability that the t-distribution is greater than or equal to the
+t-value in question. Tells us whether the test statistic is significant or not.
+
+as well as the residual standard error, the R-squared value, and the F-statistic.
