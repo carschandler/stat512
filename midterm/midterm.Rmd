@@ -64,6 +64,12 @@ elementwise by the `Df` column.
 - `F value` and `Pr(>F)` shows the same global F test as in the model summary,
 testing whether $\beta_1 = 0$.
 
+$s_Y$ can be found via:
+```{r}
+n <- length(y)
+sqrt(sum(anova_slr[, "Sum Sq"]) / (n - 1))
+```
+
 ## MLR
 
 ### MLR model summary
@@ -195,4 +201,166 @@ $$
 confint(model_slr)
 confint(model_mlr)
 ```
+
+Mean response $E[\hat{Y}_h]$:
+
+```{r}
+library(ALSM)
+x_h <- median(x1)
+ci.reg(model_slr, newdata = x_h, type = "m")
+```
+
+Single new predicted value $\hat{Y}_h$:
+
+```{r}
+ci.reg(model_slr, newdata = x_h, type = "n")
+```
+
+The mean of 3 new predicted values with the same $X_h$, $\bar{Y}_{h(new)}$:
+
+```{r}
+ci.reg(model_slr, newdata = x_h, type = "nm", m = 3)
+```
+
+### Inference on Correlation Coefficient
+
+```{r}
+cor(x1, y)
+cor(cbind(y, x1, x2, x3))
+cor.test(x1, y)
+```
+
+This is equivalent to the ANOVA F test or the T test for $\beta_1$ for SLR for
+$\rho = 0, \beta_1 = 0$ but not for values other than $0$.
+
+## Lack of Fit
+
+Requires replicates or grouping (see lecture 6 notes/HW2p3)
+
+Note that $c$ is the number of unique $X$ values that we have.
+
+```{r}
+model_reduced <- model_slr
+model_full <- lm(y ~ as.factor(x1))
+anova(model_reduced, model_full)
+```
+
+Here, SSE, SSPE are the first and second rows of `RSS` and SSLF is `Sum of Sq`.
+
+*NOTE* that the reduced and full models are flipped from what we typically think
+of.
+
+We can also get SSPE, SSLF from
+
+```{r}
+sse <- anova(model_reduced)["Residuals", "Sum Sq"]
+sspe <- anova(model_full)["Residuals", "Sum Sq"]
+sslf <- sse - sspe
+```
+
+## F-values
+
+Critical values:
+Easiest to think in terms of Full and Reduced models of GLT.
+
+```{r}
+# 2 parameters including intercept
+p_full <- 2
+# 1 parameter; just the intercept
+p_reduced <- 1
+
+df_full <- n - p_full
+df_reduced <- n - p_reduced
+
+f_star <- qf(1 - alpha, df_reduced - df_full, df_full)
+
+p <- 1 - pf(f_star, df_reduced - df_full, df_full)
+```
+
+### GLT:
+
+SSE(F) can be pulled from the ANOVA table of the full model. SSE(R) is equal to
+SSTO.
+
+Still comes out to be $MSR/MSE$. 
+
+We just use `anova(model)` for SLR and the F-value is the correct one. We can
+technically also use:
+
+```{r}
+anova(lm(y ~ 1), lm(y ~ x1))
+```
+
+And then the first RSS (residual sum of squares) line is the SSE(R) and the
+second is the SSE(F). The DF are correct as well.
+
+
+In more complex MLR scenarios, we build the reduced and full model and then use
+`anova(reduced, full)`.
+
+## Shapiro-Wilk normality test
+
+Tests for normality of residuals
+
+```{r}
+shapiro.test(model_slr$residuals)
+```
+
+## Brown-Forsythe Test
+
+Tests for heteroskedasticity by comparing variance between groups
+
+```{r}
+library(ALSM)
+x_split <- median(x1)
+groups <- x < x_split
+bf_results <- bftest(model_slr, groups)
+```
+
+Also see multiple groups on pg. 13 of HW2
+
+## Breusch-Pagan test
+
+Tests for normality of residuals
+
+```{r}
+library(lmtest)
+bptest(model_slr)
+```
+
+## Box-Cox transformation
+
+Transformation on $Y$ to help remediate non-normal and/or non-constant variance
+in the residuals.
+
+```{r}
+library(MASS)
+boxcox(model_slr, lambda = seq(0, 10, by = 0.1))
+```
+
+## Simultaneous Inference
+
+### Parameters
+
+See HW3p1. Calculate B, W manually, then confidence interval by
+subtracting/adding the statistic in question against *std error* NOT the t-value
+
+Bonferroni:
+
+```{r}
+ci.reg(model_slr, newdata = c(3, 4, 6), type = "b")
+```
+
+Working-Hotelling:
+
+```{r}
+ci.reg(model_slr, newdata = c(3, 4, 6), type = "w")
+```
+
+For joint estimation of the *parameters*, the Bonferroni interval is better when
+$n - p \ge 2$ because it yields a smaller critical value: $B = `r crit_bonf` <
+`r w` = W$. This is consistent across all models when we are estimating the
+parameters/weights/coefficients simultaneously for a linear model. That is, $W/B
+> 1$.
+
 

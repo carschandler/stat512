@@ -1,0 +1,111 @@
+# Work for Midterm Exam
+
+For computational problems, always round intermediate computations to four
+decimal places, but round your final answers to two decimal places.
+
+## TODOs
+-  4: beetween first two answer; check notes
+- 7: think is correct but kind of tough; if time
+- 9: why isn't answer on there? is 7 wrong too?
+- 11: between first and last
+
+1.
+
+```{r}
+b1 <- 2.35
+s_sq <- 2.5
+alpha <- 0.05
+n <- 50
+p <- 2
+ss_xx <- 2300
+s_b1 <- round(sqrt(s_sq / ss_xx), 4)
+t_crit <- round(qt(1 - alpha / 2, n - p), 4)
+round(
+  b1 - t_crit * s_b1, 2
+)
+round(
+  b1 + t_crit * s_b1, 2
+)
+```
+
+3. 
+
+```{r}
+msr <- 3000
+mse <- round(16200 / 49, 4)
+round(msr / mse, 2)
+```
+
+5. 
+
+```{r}
+6 - (1.63 + 0.27 * 10)
+```
+
+6.
+
+```{r}
+xbar <- 21.7
+ybar <- 43.5
+ss_xx <- 3000
+ss_xy <- 1700
+round(ss_xy / ss_xx, 2)
+```
+
+7.
+
+```{r}
+s <- 1.2
+xbar <- 14
+ss_xx <- 34
+x_h <- 12
+n <- 20
+p <- 2
+alpha <- 0.05
+t_crit <- round(qt(1 - alpha / 2, n - p), 4)
+s_pred <- round(sqrt(s^2 * (1 + 1 / n + ((x_h - xbar)^2 / ss_xx))), 4)
+round(t_crit * s_pred, 2)
+```
+
+9.
+
+```{r}
+n <- 48
+p <- 2
+xbar <- 4.5
+ss_xx <- 500
+mse <- 1.5
+xh <- 2.3
+m <- 8
+t_crit <- round(qt(1 - alpha / 2, n - p), 4)
+# t_crit <- qt(1 - alpha / 2, n - p)
+s_predmean <- round(
+  sqrt(mse * (1 / m + 1 / n + ((x_h - xbar)^2 / ss_xx))), 4
+)
+# s_predmean <- sqrt(mse * (1 / m + 1 / n + ((x_h - xbar)^2 / ss_xx) + 1))
+round(2 * t_crit * s_pred, 2)
+```
+
+10.
+
+```{r}
+xbar <- 25
+```
+
+12.
+
+```{r}
+n <- 40
+p <- 2
+c <- 10
+sse <- 120
+sslf <- 30
+sspe <- 80
+dflf <- c - p
+dfpe <- n - c
+mslf <- sslf / dflf
+mspe <- sspe / dfpe
+round(mslf / mspe, 2)
+```
+
+
