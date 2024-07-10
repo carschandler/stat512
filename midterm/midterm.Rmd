@@ -1,13 +1,198 @@
-`summary(model)`:
+## SLR
 
-- The coefficients $b0, b1$
+```{r}
+le <- read.csv("../datasets/life_expectancy.csv")
+y <- le$X2015Life.expectancy
+x1 <- le$Medical.doctors
+x2 <- le$Nurses
+x3 <- le$Pharmacists
+model_slr <- lm(y ~ x1)
+anova_slr <- anova(model_slr)
+model_mlr <- lm(y ~ x1 + x2 + x3)
+anova_mlr <- anova(model_mlr)
+```
+
+### Sum of squares terms
+
+Shouldn't need unless calculating SLR coefficients manually
+
+```{r}
+ss_xy <- sum((x1 - mean(x1)) * (y - mean(y)))
+ss_xx <- sum((x1 - mean(x1))^2)
+```
+
+### SLR model summary
+
+```{r}
+summary(model_slr)
+```
 - Standard errors of the coefficients: estimates standard deviation of the
 sampling distribution of $b1$. In other words, it is the "spread" of the values
 we would get when repeatedly sampling $b_1$ while holding the level of $X$
-constant
+constant.
 - t-values: the test statistic for the distribution that holds under the null
-hypothesis that $X$ has no impact on $Y$, which is to say that $\beta_1 = 0$.
+hypothesis that $X$ has no impact on $Y$, which is to say that $\beta_i = 0$.
 - p-values: probability that the t-distribution is greater than or equal to the
 t-value in question. Tells us whether the test statistic is significant or not.
+- `Residual standard error` is the standard error of the residuals and equals
+$\sqrt{MSE}$. It estimates the standard deviation of the error, $\sigma$, and
+$MSE$ estimates the variance of the error, $\sigma^2$. $MSE$ can be found from
+the [SLR ANOVA table] below.
+- `Multiple R-squared` is the coefficient of determination, which measures the
+proportion of the total variation in $Y$ accounted for by the inputs of the
+model. In other words, it is $SSR/SST$. $r$ is just the square root of this.
+- `Adjusted R-squared` is adjusted for the bias in $R^2$ that causes it to
+become larger as more input variables are added, regardless of whether they
+actually make the model better.
+- `F-statistic` is the two-sided Global F test (ANOVA test) statistic, $MSR/MSE
+= b_1^2 / s^2[b_1]$, distributed on $F(df_R - df_F, df_F)$ and it is equivalent
+to the two-sided t-test for $\beta_1$ in SLR: $F^* = (t^*)^2$ and the p-values
+are equal. It is the same statistic as the GLT.
 
-as well as the residual standard error, the R-squared value, and the F-statistic.
+### SLR ANOVA table
+
+```{r}
+anova_slr
+```
+
+- `Df` shows the degrees of freedom of regression and the degrees of freedom of
+error
+- `Sum Sq` shows the SSR $\sum(\hat{Y}_i - \bar{Y})^2$ and the SSE $\sum(Y_i -
+\hat{Y}_i)^2$, which sum to the SSTO.
+- `Mean Sq` shows the MSR and MSE, which are just the `Sum Sq` column divided
+elementwise by the `Df` column.
+- `F value` and `Pr(>F)` shows the same global F test as in the model summary,
+testing whether $\beta_1 = 0$.
+
+## MLR
+
+### MLR model summary
+
+```{r}
+summary(model_mlr)
+```
+
+- stderr, t-value, p-value, residual stderr are all as in SLR
+- `Multiple R-squared` is still the coefficient of determination, which measures
+the proportion of the total variation in $Y$ accounted for by the inputs of the
+model. In other words, it is $SSR/SST$. $r$ is just the square root of this.
+- `Adjusted R-squared` is adjusted for the bias in $R^2$ that causes it to
+become larger as more input variables are added, regardless of whether they
+actually make the model better.
+- `F-statistic` is still $MSR/MSE$ and tests whether *all* non-intercept
+parameters are zero or not.
+
+### MLR ANOVA table
+
+#### Type I
+
+```{r}
+anova_mlr
+```
+
+The Type I table is sequential, so the order matters.
+
+The rows are as follows:
+
+$$
+\begin{aligned}
+& SSR(X_1) \\
+& SSR(X_2 | X_1) \\
+& SSR(X_3 | X_1, X_2) \\
+\end{aligned}
+$$
+
+So we observe the *marginal* amount of variation accounted for by (or the amount
+of variation of error reduced by) the regression terms given that all *previous*
+terms are accounted for.
+
+The `Sum Sq` rows always sum to SSTO.
+
+The F-values are GLTs that test the marginal effect of input variables. For
+example, in the `x3` row, we test the significance of the marginal reduction in
+error variance attributed to $X_3$ after $X_1, X_2$ have already been
+considered, which is testing whether $\beta_3 = 0$ given all other predictors
+have been considered. To test $\beta_2$, we need to change the order to place
+`x2` last.
+
+The F-statistics are calculated as follows:
+
+$$
+\begin{aligned}
+F^* &= \frac{SSR(X_1) / (df_R - df_F)}{SSE/df_F} \\
+F^* &= \frac{SSR(X_2 | X_1) / (df_R - df_F)}{SSE/df_F} \\
+F^* &= \frac{SSR(X_3 | X_1, X_2) / (df_R - df_F)}{SSE/df_F} \\
+\end{aligned}
+$$
+
+#### Type II
+
+```{r}
+library(car)
+Anova(model_mlr)
+```
+
+The rows are as follows:
+
+$$
+\begin{aligned}
+& SSR(X_1 | X_2, X_3) \\
+& SSR(X_2 | X_1, X_3) \\
+& SSR(X_3 | X_1, X_2) \\
+\end{aligned}
+$$
+
+So only the last row of the Type I table is equivalent to the corresponding row
+of the Type II table.
+
+So we observe the *marginal* amount of variation accounted for by (or the amount
+of variation of error reduced by) the regression terms given that *all other*
+terms are accounted for.
+
+The `Sum Sq` rows *do not* sum to SSTO.
+
+The F-tests are equivalent to the t-tests in the model summary. This is to say
+that the t-tests test the marginal effect of a single predictor given that all
+other terms have been included in the model.
+
+## Inference
+
+### Critical t-values
+
+Two-sided:
+
+```{r}
+alpha <- 0.05
+dfe <- anova_slr["Residuals", "Df"]
+t_crit <- qt(1 - alpha / 2, df = dfe)
+```
+
+One-sided (i.e. $H_0: \beta_1 = 50, H_a: \beta_1 > 50$):
+
+```{r}
+dfe <- anova_slr["Residuals", "Df"]
+t_crit <- qt(1 - alpha, df = dfe)
+```
+
+### Test statistics
+
+$$
+b^* = \frac{b_1 - \beta_1}{s[\beta_1]}
+$$
+
+
+### p-values
+
+```{r}
+
+```
+
+
+
+### Confidence intervals
+
+```{r}
+confint(model_slr)
+confint(model_mlr)
+```
+
