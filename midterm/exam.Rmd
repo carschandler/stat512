@@ -8,6 +8,8 @@ decimal places, but round your final answers to two decimal places.
 - 7: think is correct but kind of tough; if time
 - 9: why isn't answer on there? is 7 wrong too?
 - 11: between first and last
+- 25: first or third (WH better when n - p < 2)
+
 
 1.
 
@@ -103,9 +105,96 @@ sslf <- 30
 sspe <- 80
 dflf <- c - p
 dfpe <- n - c
-mslf <- sslf / dflf
-mspe <- sspe / dfpe
+mslf <- round(sslf / dflf, 4)
+mspe <- round(sspe / dfpe, 4)
 round(mslf / mspe, 2)
+```
+
+13.
+
+```{r}
+df <- data.frame(
+  x = c(0.15, 0.15, 0.23, 0.28, 0.28, 0.35, 0.35, 0.35),
+  y = c(20.5, 23.5, 40.3, 43.6, 44.8, 27.6, 25.4, 26.9)
+)
+model_reduced <- lm(y ~ x, df)
+model_full <- lm(y ~ as.factor(x), df)
+anv <- anova(model_reduced, model_full)
+anv
+round(anv[2, "RSS"], 2)
+round(anv[2, "Sum of Sq"], 2)
+round(anv[2, "Res.Df"], 2)
+round(anv[2, "Df"], 2)
+```
+
+14. 
+```{r}
+df <- data.frame(
+  x = c(-0.85, -0.46, 0.25, 1.08, 1.37, 1.76, 2.59, 3.03),
+  y = c(0.45, 0.78, 1.25, 2.04, 3.89, 5.78, 19.29, 21.80)
+)
+library(MASS)
+model <- lm(y ~ x, data = df)
+boxcox(model, lambda = seq(-2, 2, by = 0.01))
+```
+
+15. 
+
+18.
+
+```{r}
+r_xy <- -0.23
+n <- 25
+p <- 2
+# Testing r = 0 is equal to testing beta for 0
+t <- (r * sqrt(n - 2)) / sqrt(1 - r^2)
+round(t, 2)
+```
+
+21.
+
+```{r}
+n <- 60
+p <- 2
+g <- 5
+round(sqrt(g * qf(1 - 0.05, g, n - p)), 2)
+```
+
+22.
+
+```{r}
+5 - 2.59 + 2 * 0.63 + 3 * -0.02
+```
+
+23.
+
+```{r}
+n <- 60
+ybar <- 200.6 / n
+xbar <- 0
+```
+
+26.
+
+```{r}
+n <- 50
+p <- 3
+se_b <- 0.9
+alpha <- 0.05
+g <- 2
+round(2 * qt(1 - alpha / (2 * 2), n - p) * 0.9, 2)
+```
+
+29.
+
+```{r}
+n <- 50
+p <- 2
+k <- 2
+bonf <- qt(1 - alpha / (2 * k), n - p)
+w <- sqrt(2 * qf(1 - alpha, 2, n - 2))
+round(bonf, 2)
+round(w, 2)
 ```
 
 
