@@ -632,8 +632,11 @@ model_full <- lm(y ~ x4 + x91 + x92 + x93 + x4 * x91 + x4 * x92 + x4 * x93)
 model_reduced <- lm(y ~ x4 + x91 + x92 + x93)
 anova_res <- anova(model_reduced, model_full)
 anova_res
+# TODO: critical value
+df_full <- 
 
 f_star <- anova_res[2, "F"]
+f_crit <- qf(1 - 0.05, 
 p <- anova_res[2, "Pr(>F)"]
 ```
 
