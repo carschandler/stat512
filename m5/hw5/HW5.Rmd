@@ -751,5 +751,5 @@ All of the criteria above agree that $Y \sim X_1 + X_2 + X_3$ is the best model
 aside from $BIC_p$, so we conclude that it is the best since a variety of
 metrics each testing slightly different properties point to it being the best
 model of the subsets. However, it is worth noting that the model chosen by
-$BIC_p$, $Y \sim X_1 + X_3$, was a very close second in all metrics, with $Y ~
+$BIC_p$, $Y \sim X_1 + X_3$, was a very close second in all metrics, with $Y \sim
 X_1$ by itself not far behind.
