@@ -35,6 +35,7 @@
             pkgs.rPackages.ggplot2
             pkgs.rPackages.lm_beta
             pkgs.rPackages.car
+            pkgs.rPackages.fmsb
             # pkgs.rstudio
             pkgs.texliveFull
             pkgs.pandoc

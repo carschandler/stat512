@@ -1,0 +1,220 @@
+---
+title: "HW6"
+author: "Robert Chandler"
+email: "chandl71@purdue.edu"
+date: "2024-07-21"
+output:
+  pdf_document: default
+---
+
+# Setup
+Begin by reading the dataset for this set of problems:
+
+```{r setup}
+le <- read.csv("../../datasets/life_expectancy.csv")
+y <- le$X2015Life.expectancy
+x1 <- le$Medical.doctors
+x2 <- le$Nurses
+x3 <- le$Pharmacists
+```
+
+# Problem 1
+
+For the life expectancy data, Consider the MLR model given by
+$Y \sim X_1 + X_2 X_3$
+
+```{r}
+model <- lm(y ~ x1 + x2 + x3)
+```
+
+## 1.a
+
+Obtain a partial regression plot for $X_1$, $X_2$, and $X_3$ and discuss whether
+the regression relationships in the fitted regression function are inappropriate
+for any of the predictor variables.
+
+```{r avplot, fig.cap="Partial Regression Plot"}
+library(car)
+avPlots(model)
+```
+
+The partial regression plots show that adding a linear term for $X_1$ would be a
+helpful addition to the regression model already containing $X_2, X_3$. Adding
+in $X_3$ to a model already containing the other variables would be a helpful
+addition, but the linear increase in $Y$ as a result is not as strong as that of
+$X_1$. The same goes for adding $X_2$ to a model with the others already
+included. The partial plots for $X_2, X_3$ are somewhat close to zero, so
+depending on what kind of confidence is desired, it is possible that these might
+not be considered appropriate to add to the model, but we conclude for this case
+that they are. As such, the relationships in the fitted regression function are
+appropriate for all predictor variables.
+
+## 1.b
+
+Check for influential points by calculating DFFITS, DFBETAS and Cook’s distance
+values.
+
+### DFFITS
+
+Checking the influence on single predictions using DFFITS using the criterion:
+
+$$
+|DFFITS_i| > 2 \sqrt{\frac{p}{n}}
+$$
+
+```{r}
+n <- length(y)
+p <- length(model$coefficients)
+influential_dffits <- abs(dffits(model)) > 2 * sqrt(p / n)
+```
+
+There are `r sum(influential_dffits)` influential points according to the DFFITS
+criterion. The following rows in the dataset (starting at an index of 1) are
+influential: $i = \{`r which(influential_dffits)`\}$.
+
+### DFBETAS
+
+Checking the influence on the regression coefficients using DFBETAS using the
+criterion:
+
+$$
+|DFBETAS_k(i)| > \frac{2}{\sqrt{n}}
+$$
+
+```{r}
+influential_dfbetas <- abs(dfbetas(model)) > 2 / sqrt(n)
+```
+
+There are `r sum(influential_dfbetas)` total influential points according to the
+DFBETAS criterion. The breakdown of how many correspond to each coefficient is:
+
+```{r}
+colSums(influential_dfbetas)
+```
+
+The following shows which cases are influential on which regression parameters:
+
+```{r}
+influential_dfbetas[rowSums(influential_dfbetas) != 0, ]
+```
+
+The row/index of the case is shown on the left, and the four columns correspond
+to whether or not that case is influential on the parameter labeled in the
+respective column header.
+
+### Cook's Distance
+
+Checking which cases are influential on all fitted values using Cook's distance
+with the criterion:
+
+```{r}
+f_crit <- qf(0.2, p, n - p)
+```
+
+$$
+D_i > F(0.2, p, n - p) = F(0.2, `r p`, `r n - p`) = `r f_crit`
+$$
+
+```{r}
+influential_cooks <- cooks.distance(model) > f_crit
+```
+
+There are `r sum(influential_cooks)` influential cases under the criterion for
+Cook's distance, so we conclude that there are no cases in the dataset that are
+significantly influential on *all* fitted values.
+
+## 1.c
+
+Determine whether there is multicollinearity present based on VIF.
+
+```{r}
+vif(model)
+```
+
+All of the VIF terms are between 2 and 3 with a mean of $`r mean(vif(model))`$
+which is much less than 10, which is the point at which we would consider there
+to be a serious multicollinearity issue. These values are still somewhat greater
+than 1, and the mean value indicates that the expected sum of the squared errors
+in the LS standardized regression coefficients is $`r mean(vif(model))`$ times
+what it would be if the $X$ variables were uncorrelated. Therefore, we conclude
+that while there may be some multicollinearity present, it definitely should not
+be classified as a serious issue.
+
+# Problem 2
+
+Use R to summarize the OLS model. Then compute the confidence interval for the
+linear impact of $X_1$, $X_2$, and $X_3$.
+
+Showing the R summary of the previously calculated OLS model:
+
+```{r}
+summary(model)
+```
+
+Computing the confidence interval for the linear impact of each input variable:
+
+```{r}
+confint(model)[2:4, ]
+```
+
+# Problem 3
+
+Use R to complete the WLS analysis on the model (note: just do one iteration).
+Discuss the difference. Then compute the confidence interval for the
+linear impact of $X_1$, $X_2$, $X_3$.
+
+```{r}
+w <- 1 / fitted(lm(abs(residuals(model)) ~ x1 + x2 + x3))^2
+model_wlr <- lm(y ~ x1 + x2 + x3, weight = w)
+summary(model_wlr)
+```
+
+- The estimated values of the parameters are very similar in WLS to the OLS
+model.
+- The standard errors have decreased slightly for the parameters, the t-values
+are comparable to OLS, and the p-values have all decreased, meaning the
+estimates on our parameters have become more significant.
+- The residual standard error should not be compared as the residuals have been
+modified. 
+- The R-squared values have remained nearly exactly the same with the values for
+WLS dropping just slightly.
+- The global F-statistic is nearly the same as well, dropping slightly in the
+WLS model.
+
+The confidence interval for the linear impact of the input variables is:
+
+```{r}
+confint(model_wlr)[2:4, ]
+```
+
+This interval is very similar to the previous one, but has tightened up just a
+bit more than the OLS interval.
+
+# Problem 4
+
+Use R to complete the Robust analysis on the model. Then compute the confidence
+interval for the linear impact of $X_1$, $X_2$, and $X_3$.
+
+```{r}
+library(MASS)
+model_rlm <- rlm(y ~ x1 + x2 + x3, psi = psi.bisquare)
+summary(model_rlm)
+```
+
+- The Robust model is once again very similar to the previous models.
+- It shares similar parameter estimates to the other two models.
+- This time, the standard errors of the parameters *increased* slightly relative
+to the values in the OLS model.
+- The residuals have once more been modified, so the residual standard error
+cannot be compared to OLS, but the value is similar to that of the WLS this
+time.
+- The t-values are once again very similar to the previous values.
+
+The confidence interval for the linear impact of the input variables is:
+
+```{r}
+confint(model_rlm)[2:4, ]
+```
+
+This interval is very similar to the previous one, but has tightened up just a
+bit more than the OLS interval.
