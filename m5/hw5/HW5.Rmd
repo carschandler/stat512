@@ -251,7 +251,7 @@ Obtain the model summary and ANOVA table using R. Then, using the model summary,
 write the estimated response function for each level of the four regions.
 
 ```{r}
-region_map <- data.frame(ne = 1, nc = 2, s = 3, w = 4)
+region_map <- data.frame(nc = 1, ne = 2, s = 3, w = 4)
 x91 <- x92 <- x93 <- rep(0, nrow(df))
 x91[df$region == region_map$ne] <- 1
 x92[df$region == region_map$s] <- 1
@@ -346,10 +346,13 @@ same meaning it would as if we were using a truly continuous variable and we
 should not draw any legitimate conclusions from it.
 
 We can see in the model summary that the p-value for the `region` parameter is
-very high, indicating that it has no linear impact on $Y$, and it also pulls up
-the p-value for the interaction parameter. On the other hand, the parameter for
-infection has a high level of significance in the incorrect model, and all of
-the parameters in the original model are significant at $\alpha = 0.1$.
+significant, so we did happen to get lucky and the values for the region happen
+to line up in an order that actually looks like a linear response. While this is
+indicative that the `region` does at least have an impact on `Y`, we should not
+interpret meaning from the values of the parameters themselves here, since the
+numbers only indicate categories. We do note a lack of significance in most of the
+interaction parameters in both the correct and incorrect models. We also note
+that the intercept values are fairly close to each other.
 
 In terms of the MSE values, we have a value of $`r mse`$ in the original model
 and $`r mse_wrong`$ in the incorrect model, which is a $`r mse_wrong/mse`%$
@@ -359,7 +362,8 @@ worse fit to the data.
 Regarding $df_E$, we have a value of $`r anova_res["Residuals", "Df"]`$ for the
 original model and $`r anova_wrong["Residuals", "Df"]`$ for the incorrect model.
 This is due simply to the number of parameters being greater for the original
-model as discussed previously.
+model as discussed previously; as the number of parameters decreases, the
+degrees of freedom increases.
 
 # Problem 4
 
@@ -506,8 +510,9 @@ $$
 b_{4_c} + b_{4_c \cdot 9,2} = `r b4` + `r b4x92` = `r b4 + b4x92`
 $$
 
-The difference is **significant** because (from the model summary above) it has
-a t-value of $`r t_star`$ corresponding to a p-value of $`r p`$, which is less
+The difference is **insignificant** because (from the model summary above) it has
+a t-value of $`r t_star`$ corresponding to a p-value of $`r p`$, which is
+greater
 than $\alpha = 0.05$.
 
 
@@ -524,8 +529,9 @@ $$
 b_{4_c} + b_{4_c \cdot 9,3} = `r b4` + `r b4x93` = `r b4 + b4x93`
 $$
 
-The difference is **significant** because (from the model summary above) it has
-a t-value of $`r t_star`$ corresponding to a p-value of $`r p`$, which is less
+The difference is **insignificant** because (from the model summary above) it has
+a t-value of $`r t_star`$ corresponding to a p-value of $`r p`$, which is
+greater
 than $\alpha = 0.05$.
 
 ## 4.c
@@ -548,7 +554,7 @@ $$
 $$
 
 Based on the analysis in [4.b], we see that the values for these two parameters
-are close, but we cannot make any statistical conclusions without performing a
+look to be fairly different, but we cannot make any statistical conclusions without performing a
 test. We can perform a GLT where the reduced model under $H_0: \beta_{4_c \cdot
 9,1} = \beta_{4_c \cdot 9,2} = \beta'$ is
 
@@ -584,9 +590,9 @@ anova_res
 p <- anova_res[2, "Pr(>F)"]
 ```
 
-The test has a p-value of $`r p` > 0.05 = \alpha$, so we fail to reject $H_0$
-and we conclude that we cannot say the linear impact of infection on $Y$ for NE
-is significantly different from that of S, confirming our suspicion observed by
+The test has a p-value of $`r p` < 0.05 = \alpha$, so we reject $H_0$
+and we conclude that the linear impact of infection on $Y$ for NE
+**is significantly different** from that of S, confirming our suspicion observed by
 a glance at the estimates.
 
 # Problem 5
@@ -632,13 +638,21 @@ model_full <- lm(y ~ x4 + x91 + x92 + x93 + x4 * x91 + x4 * x92 + x4 * x93)
 model_reduced <- lm(y ~ x4 + x91 + x92 + x93)
 anova_res <- anova(model_reduced, model_full)
 anova_res
-# TODO: critical value
-df_full <- 
+df_reduced <- anova_res[1, "Res.Df"]
+df_full <- anova_res[2, "Res.Df"]
 
+alpha <- 0.05
 f_star <- anova_res[2, "F"]
-f_crit <- qf(1 - 0.05, 
+f_crit <- qf(1 - alpha, df_reduced - df_full, df_full)
 p <- anova_res[2, "Pr(>F)"]
 ```
+
+The critical value is:
+
+$$
+F(1 - \alpha; df_R - df_F; df_F) = F(1 - `r alpha`; `r df_reduced - df_full`;
+`r df_full`)  = `r f_crit`
+$$
 
 The test statistic, as shown in the table, is
 
