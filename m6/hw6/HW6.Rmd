@@ -128,7 +128,7 @@ significantly influential on *all* fitted values.
 Determine whether there is multicollinearity present based on VIF.
 
 ```{r}
-vif(model)
+car::vif(model)
 ```
 
 All of the VIF terms are between 2 and 3 with a mean of $`r mean(vif(model))`$
@@ -165,8 +165,8 @@ linear impact of $X_1$, $X_2$, $X_3$.
 
 ```{r}
 w <- 1 / fitted(lm(abs(residuals(model)) ~ x1 + x2 + x3))^2
-model_wlr <- lm(y ~ x1 + x2 + x3, weight = w)
-summary(model_wlr)
+model_wls <- lm(y ~ x1 + x2 + x3, weight = w)
+summary(model_wls)
 ```
 
 - The estimated values of the parameters are very similar in WLS to the OLS
@@ -184,7 +184,7 @@ WLS model.
 The confidence interval for the linear impact of the input variables is:
 
 ```{r}
-confint(model_wlr)[2:4, ]
+confint(model_wls)[2:4, ]
 ```
 
 This interval is very similar to the previous one, but has tightened up just a
@@ -216,5 +216,87 @@ The confidence interval for the linear impact of the input variables is:
 confint(model_rlm)[2:4, ]
 ```
 
-This interval is very similar to the previous one, but has tightened up just a
-bit more than the OLS interval.
+# FIXME
+
+# Problem 5
+
+Apply the bootstrapping method to compute the confidence interval on the
+parameters for WLS, OLS, and Robust.
+
+## WLS
+
+```{r}
+df_le <- data.frame(y, x1, x2, x3)
+library(boot)
+
+boot_wls <- function(data, indices) {
+  data <- data[indices, ]
+  model <- lm(y ~ x1 + x2 + x3, data)
+  w <- 1 / fitted(lm(abs(residuals(model)) ~ x1 + x2 + x3, data))^2
+  model_wls <- lm(y ~ x1 + x2 + x3, weight = w, data = data)
+  coef(model_wls)
+}
+
+boot_wls <- boot(data = df_le, statistic = boot_wls, R = 100)
+boot_wls
+```
+
+## OLS
+
+```{r}
+boot_ols <- function(data, indices) {
+  data <- data[indices, ]
+  model_ols <- lm(y ~ x1 + x2 + x3, data)
+  coef(model_ols)
+}
+
+boot_ols <- boot(data = df_le, statistic = boot_ols, R = 100)
+boot_ols
+```
+
+## Robust
+
+```{r}
+library(boot)
+boot_huber <- function(data, indices, maxit = 100) {
+  data <- data[indices, ]
+  model_rlm <- rlm(y ~ x1 + x2 + x3, data = data, maxit = maxit)
+  coef(model_rlm)
+}
+
+boot_rlm <- boot(
+  data = df_le,
+  statistic = boot_huber,
+  R = 100,
+  maxit = 100,
+)
+boot_rlm
+```
+
+# Problem 6
+
+Note that the lm.ridge() algorithm turns out to be indeterminate when VIF is
+close to 1, resulting in a flat ridge trace line. On the other hand, the
+`lmridge()` function only reports $\lambda = 0$ (i.e., OLS). For practicing the
+`lm.ridge()` and `lmridge()` functions, this question will be to use the body
+fat example and complete the confidence interval for $X_1$, $X_2$, and $X_3$ in
+the ridge model.
+
+```{r}
+fat <- read.csv("../../datasets/bodyfat.csv")
+colnames(fat) <- c("x1", "x2", "x3", "y")
+model_ridge <- lm.ridge(y ~ x1 + x2 + x3, data = fat, lambda = seq(0, 1, 0.01))
+plot(model_ridge)
+select(model_ridge)
+```
+
+```{r}
+model_ridge <- lmridge::lmridge(
+  y ~ x1 + x2 + x3,
+  data = fat, K = seq(0, 1, 0.01)
+)
+plot(model_ridge)
+lmridge::vif(model_ridge)
+```
+
+

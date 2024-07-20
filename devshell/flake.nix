@@ -36,6 +36,7 @@
             pkgs.rPackages.lm_beta
             pkgs.rPackages.car
             pkgs.rPackages.fmsb
+            pkgs.rPackages.lmridge
             # pkgs.rstudio
             pkgs.texliveFull
             pkgs.pandoc
