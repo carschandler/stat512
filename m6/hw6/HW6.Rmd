@@ -151,7 +151,7 @@ Showing the R summary of the previously calculated OLS model:
 summary(model)
 ```
 
-Computing the confidence interval for the linear impact of each input variable:
+Computing the (95%) confidence interval for the linear impact of each input variable:
 
 ```{r}
 confint(model)[2:4, ]
@@ -198,7 +198,8 @@ interval for the linear impact of $X_1$, $X_2$, and $X_3$.
 ```{r}
 library(MASS)
 model_rlm <- rlm(y ~ x1 + x2 + x3, psi = psi.bisquare)
-summary(model_rlm)
+summary_rlm <- summary(model_rlm)
+summary_rlm
 ```
 
 - The Robust model is once again very similar to the previous models.
@@ -210,18 +211,74 @@ cannot be compared to OLS, but the value is similar to that of the WLS this
 time.
 - The t-values are once again very similar to the previous values.
 
-The confidence interval for the linear impact of the input variables is:
 
 ```{r}
-confint(model_rlm)[2:4, ]
+ci_rlm <- function(model, alpha = 0.05) {
+  stopifnot(any(class(model) == "rlm"))
+
+  n <- nrow(model$model)
+  p <- ncol(model$model)
+  t_crit <- qt(1 - alpha / 2, n - p)
+  summary_model <- summary(model)
+  b <- drop(summary_model$coefficients[, "Value"])
+  stderr <- drop(summary(model)$coefficients[, "Std. Error"])
+  interval_lower <- b - t_crit * stderr
+  interval_upper <- b + t_crit * stderr
+  intervals <- t(rbind(interval_lower, interval_upper))
+  colnames(intervals) <- c(
+    paste(100 * alpha / 2, "%"), paste(100 * (1 - alpha / 2), "%")
+  )
+  intervals
+}
+
+intervals_rlm <- ci_rlm(model_rlm)
 ```
 
-# FIXME
+The confidence intervals for the linear impact of the input variables are shown
+below:
+
+$$
+\begin{gathered}
+\beta_1: (`r intervals_rlm["x1", ]`) \\
+\beta_2: (`r intervals_rlm["x2", ]`) \\
+\beta_3: (`r intervals_rlm["x3", ]`) \\
+\end{gathered}
+$$
+
 
 # Problem 5
 
 Apply the bootstrapping method to compute the confidence interval on the
 parameters for WLS, OLS, and Robust.
+
+## OLS
+
+```{r}
+boot_ols <- function(data, indices) {
+  data <- data[indices, ]
+  model_ols <- lm(y ~ x1 + x2 + x3, data)
+  coef(model_ols)
+}
+
+boot_ols <- boot(data = df_le, statistic = boot_ols, R = 100)
+boot_ols
+
+ci_x0 <- boot.ci(boot_ols, index = 1, type = "perc")$percent[4:5]
+ci_x1 <- boot.ci(boot_ols, index = 2, type = "perc")$percent[4:5]
+ci_x2 <- boot.ci(boot_ols, index = 3, type = "perc")$percent[4:5]
+ci_x3 <- boot.ci(boot_ols, index = 4, type = "perc")$percent[4:5]
+```
+
+The confidence intervals on the parameters are:
+
+$$
+\begin{gathered}
+\beta_0: (`r ci_x0`) \\
+\beta_1: (`r ci_x1`) \\
+\beta_2: (`r ci_x2`) \\
+\beta_3: (`r ci_x3`) \\
+\end{gathered}
+$$
 
 ## WLS
 
@@ -239,20 +296,23 @@ boot_wls <- function(data, indices) {
 
 boot_wls <- boot(data = df_le, statistic = boot_wls, R = 100)
 boot_wls
+
+ci_x0 <- boot.ci(boot_wls, index = 1, type = "perc")$percent[4:5]
+ci_x1 <- boot.ci(boot_wls, index = 2, type = "perc")$percent[4:5]
+ci_x2 <- boot.ci(boot_wls, index = 3, type = "perc")$percent[4:5]
+ci_x3 <- boot.ci(boot_wls, index = 4, type = "perc")$percent[4:5]
 ```
 
-## OLS
+The confidence intervals on the parameters are:
 
-```{r}
-boot_ols <- function(data, indices) {
-  data <- data[indices, ]
-  model_ols <- lm(y ~ x1 + x2 + x3, data)
-  coef(model_ols)
-}
-
-boot_ols <- boot(data = df_le, statistic = boot_ols, R = 100)
-boot_ols
-```
+$$
+\begin{gathered}
+\beta_0: (`r ci_x0`) \\
+\beta_1: (`r ci_x1`) \\
+\beta_2: (`r ci_x2`) \\
+\beta_3: (`r ci_x3`) \\
+\end{gathered}
+$$
 
 ## Robust
 
@@ -271,7 +331,23 @@ boot_rlm <- boot(
   maxit = 100,
 )
 boot_rlm
+
+ci_x0 <- boot.ci(boot_rlm, index = 1, type = "perc")$percent[4:5]
+ci_x1 <- boot.ci(boot_rlm, index = 2, type = "perc")$percent[4:5]
+ci_x2 <- boot.ci(boot_rlm, index = 3, type = "perc")$percent[4:5]
+ci_x3 <- boot.ci(boot_rlm, index = 4, type = "perc")$percent[4:5]
 ```
+
+The confidence intervals on the parameters are:
+
+$$
+\begin{gathered}
+\beta_0: (`r ci_x0`) \\
+\beta_1: (`r ci_x1`) \\
+\beta_2: (`r ci_x2`) \\
+\beta_3: (`r ci_x3`) \\
+\end{gathered}
+$$
 
 # Problem 6
 
@@ -282,21 +358,113 @@ close to 1, resulting in a flat ridge trace line. On the other hand, the
 fat example and complete the confidence interval for $X_1$, $X_2$, and $X_3$ in
 the ridge model.
 
-```{r}
+We can first read in the dataset and model it using `MASS::lm.ridge()`, then show the
+ridge trace plot.
+
+```{r fig.cap = "Ridge Trace Plot from MASS Package"}
 fat <- read.csv("../../datasets/bodyfat.csv")
 colnames(fat) <- c("x1", "x2", "x3", "y")
-model_ridge <- lm.ridge(y ~ x1 + x2 + x3, data = fat, lambda = seq(0, 1, 0.01))
-plot(model_ridge)
-select(model_ridge)
+model_ridge_mass <- lm.ridge(
+  y ~ x1 + x2 + x3,
+  data = fat, lambda = seq(0, 1, 0.01)
+)
+plot(model_ridge_mass)
 ```
 
+Next, we can select the $\lambda$ value that has the smallest GCV value.
+
 ```{r}
-model_ridge <- lmridge::lmridge(
+select(model_ridge_mass)
+lambda_opt <- 0.02
+```
+
+The optimal $\lambda$ value which minimizes the Generalized Cross Validation
+equation is $\lambda = `r lambda_opt`$.
+
+Next, we can model the data using `lmridge::lmridge()` and show the ridge trace
+plot.
+
+```{r fig.cap = "Ridge Trace Plot from lmridge Package"}
+model_lmridge <- lmridge::lmridge(
   y ~ x1 + x2 + x3,
   data = fat, K = seq(0, 1, 0.01)
 )
-plot(model_ridge)
-lmridge::vif(model_ridge)
+plot(model_lmridge)
 ```
 
+We observe the same plot as before, just with different axis limits. Next, we
+observe the VIF values for the first six values of $\lambda$.
 
+```{r}
+head(lmridge::vif(model_lmridge))
+```
+
+The VIF are closest to 1 for all parameters when $\lambda = k = 0.02$.
+
+Lastly, we observe the model summary for the optimal $\lambda$ value:
+
+```{r}
+ridge_summary <- summary(lmridge::lmridge(
+  y ~ x1 + x2 + x3,
+  data = fat, K = lambda_opt
+))
+ridge_summary
+```
+
+We can use the values in this summary to calculate the confidence interval for
+the parameters:
+
+```{r}
+estimates <- ridge_summary$summaries$`summary  1`$coefficients[
+  c("x1", "x2", "x3"), "Estimate (Sc)"
+]
+
+stderrs <- ridge_summary$summaries$`summary  1`$coefficients[
+  c("x1", "x2", "x3"), "StdErr (Sc)"
+]
+
+df_ridge <- ridge_summary$summaries$`summary  1`$df1[, "df ridge"]
+alpha <- 0.05
+n <- nrow(fat)
+
+interval_lower <- estimates - qt(1 - alpha / 2, n - df_ridge) * stderrs
+interval_upper <- estimates + qt(1 - alpha / 2, n - df_ridge) * stderrs
+```
+
+The intervals are as follows:
+
+For $X_1$:
+
+$$
+\begin{gathered}
+b_{1,SC} \pm t(1 - \alpha / 2, n - df_{\text{ridge}}) s_{1,SC} \\
+ `r estimates["x1"]` \pm t(`r 1 - alpha / 2`, `r n` - `r df_ridge`)
+`r stderrs["x1"]` \\
+ (`r interval_lower["x1"]`, `r interval_upper["x1"]`)
+\end{gathered}
+$$
+
+Where $b_{SC}, s_{SC}$ refer to the scaled estimate for the parameter $\beta_1$
+and the scaled standard error of the parameter.
+
+For $X_2$:
+
+$$
+\begin{gathered}
+b_{2,SC} \pm t(1 - \alpha / 2, n - df_{\text{ridge}}) s_{2,SC} \\
+ `r estimates["x2"]` \pm t(`r 1 - alpha / 2`, `r n` - `r df_ridge`)
+`r stderrs["x2"]` \\
+ (`r interval_lower["x2"]`, `r interval_upper["x2"]`)
+\end{gathered}
+$$
+
+For $X_3$:
+
+$$
+\begin{gathered}
+b_{3,SC} \pm t(1 - \alpha / 3, n - df_{\text{ridge}}) s_{3,SC} \\
+ `r estimates["x3"]` \pm t(`r 1 - alpha / 2`, `r n` - `r df_ridge`)
+`r stderrs["x3"]` \\
+ (`r interval_lower["x3"]`, `r interval_upper["x3"]`)
+\end{gathered}
+$$

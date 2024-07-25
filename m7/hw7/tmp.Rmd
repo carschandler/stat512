@@ -1,0 +1,16 @@
+```{r}
+cereal <- read.csv("~/xdg/Downloads/cereal.csv")
+df <- ALSM::oneway(cereal$y, cereal$design, mc = matrix(
+  c(0.5, 0.5, -0.5, -0.5),
+  1, 4
+), alpha = 0.05)$descriptive
+alpha <- 0.05
+n <- sum(df[, "n"])
+r <- length(unique(df[, "Group"]))
+# r <- length(unique(df$design))
+t_crit <- qt(1 - alpha / 2, n - r)
+l_hat <- 0.5 * (sum(df[1:2, "mean"]) - sum(df[3:4, "mean"]))
+stderr <- sqrt(10.547 * 0.5^2 * sum(1 / df[, "n"]))
+interval_lower <- l_hat - stderr * t_crit
+interval_upper <- l_hat + stderr * t_crit
+```
