@@ -15,9 +15,15 @@ represented with different factor effects model, depending on the baseline.
 Hence, the mean responses, $\mu_1$, $\mu_2$, $\mu_3$, and $\mu_4$ are the means
 computed on $\log_10Y$.
 
-Build a model summary using the first region (1) as the baseline, the R output
-shows table as the following. The values in the corresponding cells are denoted
-by $A_i, \quad i = \{1, 2, ..., 16\}$.
+Building a model summary using the first region (1) as the baseline, the R
+output shows table as the following. The values in the corresponding cells are
+denoted by $A_i, \quad i = \{1, 2, ..., 16\}$.
+
+![Model Summary 1](./p1t1.png)
+
+Repeating using the second region as the baseline yields the following summary:
+
+![Model Summary 2](./p1t2.png)
 
 ## 1.a
 
@@ -58,10 +64,17 @@ B_{14}$.
 To perform the hypothesis $H_0: \mu_3 = \mu_1$, the point estimate $\hat{Y}_3 -
 \hat{Y}_1 = \mu_3 - \mu_1 = A_1 + A_3 - A_1 = A_3$ and the p-value is $A_{15}$.
 
+## 1.e 
+
+To perform the hypothesis $H_0: \mu_3 = \mu_2$, the point estimate $\hat{Y}_3 -
+\hat{Y}_2 = \mu_3 - \mu_2 = B_1 + B_3 - B_1 = B_3$ and the p-value is $B_{15}$.
+
 # Problem 2
 
 According to the following data summary, compute the following confidence
 intervals:
+
+![Data Summary](./p2.png)
 
 ```{r}
 df <- data.frame(
@@ -79,10 +92,10 @@ $$
 
 ```{r}
 alpha <- 0.05
-n <- sum(df$n)
+n_total <- sum(df$n)
 r <- length(unique(df$group))
 mse <- 100
-t_crit <- qt(1 - alpha / 2, n - r)
+t_crit <- qt(1 - alpha / 2, n_total - r)
 l_hat <- 0.5 * (sum(df$mean[1:2]) - sum(df$mean[3:4]))
 stderr <- sqrt(mse * 0.5^2 * sum(1 / df$n))
 interval_lower <- l_hat - stderr * t_crit
@@ -126,7 +139,7 @@ $$
 Therefore, the 95% confidence interval on the difference is:
 
 $$
-CI = \hat{L} \pm t(1 - \alpha / 2, n - r) s[\hat{L}] = (`r c(interval_lower, interval_upper)`)
+\hat{L} \pm t(1 - \alpha / 2, n - r) s[\hat{L}] = `r l_hat` \pm `r t_crit` \cdot `r stderr` = (`r c(interval_lower, interval_upper)`)
 $$
 
 ## 2.b
@@ -140,7 +153,7 @@ $$
 ```{r}
 group_names <- c("1-2", "1-3", "2-3")
 g <- length(group_names)
-bonf <- qt(1 - alpha / (2 * g), n - r)
+bonf <- qt(1 - alpha / (2 * g), n_total - r)
 df_bonf <- data.frame()
 coeffs <- list(
   c(1, -1, 0, 0),
@@ -171,8 +184,10 @@ colnames(intervals) <- c(
 Calculating the critical Bonferroni value:
 
 $$
-B = t(1 - \alpha / (2g), n_T - r)
+B = t(1 - \alpha / (2g), n_T - r) = t(1 - `r alpha` / (2 \cdot `r g`), `r n` - `r r`)
+= `r bonf`
 $$
+
 
 The $\hat{L}$ for each case are:
 
@@ -200,7 +215,7 @@ $$
 \hat{L} \pm Bs[\hat{L}]
 $$
 
-for each group
+for each group...
 
 $$
 \begin{aligned}
@@ -210,7 +225,7 @@ $$
 \end{aligned}
 $$
 
-the intervals are
+...the intervals are
 
 $$
 \begin{aligned}
@@ -219,3 +234,289 @@ $$
 \mu_2 - \mu_3&: (`r intervals["2-3", ]`) \\
 \end{aligned}
 $$
+
+# Problem 3
+
+Problems 3 and 4 are both based on the following scenario:
+
+You are part of a team that is investigating the effectiveness of two different
+ingredients in a drug. For the first ingredient (factor A), you test three
+different amounts, 10mL, 20mL, and 30mL. For the second ingredient (factor B),
+you test 2 different amounts, 10mL and 20 mL. With three levels of the first
+ingredient and two levels of the second ingredient, you can create six different
+formulations for the drug. You obtain a random sample of 60 individuals. For
+each of the six formulations, you randomly select 10 individuals to receive that
+formulation of the drug and then collect a response from each individual.
+
+## 3.a
+
+Write down the two-way ANOVA model that would be used for this experiment. Use
+the factor-effects notation for the model, not the cell-means notation. Define
+each component of the model in context of the problem. For example, don’t just
+refer to factor A or factor B, but refer to drugs themselves. Also be sure to
+include information about the number of levels for each factor and the number of
+replicates.
+
+The model for this experiment in factor-effects notation is:
+
+$$
+Y_{ijk} = \mu_{\cdot \cdot} + \alpha_i + \beta_j + (\alpha \beta)_{ij} +
+\varepsilon_{ijk}
+$$
+
+$Y_{ijk}$ is the $k$th observation/case of the dependent variable, drug
+effectiveness, for a given treatment where the first ingredient is used at the
+$i$th level and the second ingredient is used at the $j$th level. 
+
+$\mu_{\cdot \cdot}$ is the overall mean drug effectiveness across all treatments
+(all $ab = 3 \cdot 2 = 6$ combinations of factor levels).
+
+$\alpha_i, \beta_j$ are the main effects for the first and second ingredients
+when they are used at the $i$th and $j$th level, respectively. These correspond
+to the increase in effectiveness of the drug that we observe as a result of
+adding in the first/second ingredient at a given level.
+
+$(\alpha \beta)_{ij}$ is the interaction effect between factors when $A$ is at
+the $i$th level and $B$ is at the $j$th level. It corresponds to the difference
+in effectiveness of the drug that we observe from the combination of ingredients
+at the given levels if the two ingredients were purely additive and the true
+effectiveness of that combination.
+
+$\varepsilon_{ijk}$ is the i.i.d. error associated with each observation/case.
+
+There are $a = 3$ levels for the first ingredient (factor $A$) and $b = 2$
+levels for the second (factor $B$). There are $n = 10$ replicates for each
+of the $ab = 6$ treatments, yielding $n_T = nab = 60$ total cases.
+
+## 3.b
+
+Pretend the table below contains information about the sample means for each of
+the six formulations of the drug. Draw an interaction plot for these data. For
+these data, does there appear to be an interaction? Why or why not?
+
+![Sample Means](./p3.png)
+
+```{r fig.cap="Interaction Plot"}
+library(ggplot2)
+
+drug <- data.frame(
+  "A_level" = c("A10mL", "A20mL", "A30mL"),
+  "B10mL" = c(10, 25, 30),
+  "B20mL" = c(40, 50, 55),
+  check.names = FALSE
+)
+
+ggplot(drug, aes(x = A_level, group = 1)) +
+  geom_line(aes(y = B10mL, color = "B10mL")) +
+  geom_point(aes(y = B10mL)) +
+  geom_line(aes(y = B20mL, color = "B20mL")) +
+  geom_point(aes(y = B20mL)) +
+  labs(x = "A Level", y = "Drug Effectiveness")
+```
+
+There is a slight interaction effect for the data since the lines in the
+interaction plot are not perfectly parallel; the transition from 10 to 20 mL of
+the first ingredient (factor $A$) yields a higher increase in drug effectiveness
+when the second ingredient (factor $B$) uses 10mL than when it uses 20mL. We
+would estimate that this interaction is probabily not significant since the
+lines are close to parallel, but we would need more information to test this
+statistically.
+
+## 3.c
+
+Regardless of your answer to part (b), assume that the interaction between drugs
+A and B is not important and can be ignored. You are interested in comparing the
+average of levels 2 (20 mL) and 3 (30 mL) of Drug A with level 1 of drug A (10
+mL) to see if there is a significant difference between them. That is, you are
+interested in the following contrast:
+
+$$
+L = \frac{\mu_{2 \cdot} + \mu_{3 \cdot}}{2} - \mu_{1 \cdot}
+$$
+
+### 3.c.i
+
+What is the point estimate for this contrast, $\hat{L}$?
+
+```{r}
+a_means <- rowMeans(drug[2:3])
+l_hat <- (a_means[2] + a_means[3]) / 2 - a_means[1]
+```
+
+The point estimate is:
+
+$$
+\begin{aligned}
+\hat{L} &= \frac{\bar{y}_{2 \cdot} + \bar{y}_{3 \cdot}}{2} - \bar{y}_{1 \cdot} \\
+& = \frac{(25 + 50)/2 + (30 + 55)/2}{2} - (10 + 40)/2 \\
+& = \frac{`r (25 + 50)/2` + `r (30 + 55)/2`}{2} - `r (10 + 40)/2` \\
+& = `r ((25 + 50)/2 + (30 + 55)/2) / 2` - `r (10 + 40)/2` \\
+& = `r l_hat` \\
+\end{aligned}
+$$
+
+### 3.c.ii
+
+What is the confidence interval for this contrast? Is there a significant
+difference? (Assume that the MSE is 60).
+
+```{r}
+mse <- 60
+coef <- c(-1, 0.5, 0.5)
+a <- 3
+b <- 2
+n <- 10
+n_total <- 60
+stderr <- sqrt(mse / (b * n) * sum(coef^2))
+t_crit <- qt(1 - alpha / 2, (n - 1) * a * b)
+interval_lower <- l_hat - t_crit * stderr
+interval_upper <- l_hat + t_crit * stderr
+```
+
+We are assuming the interaction effects are negligible, so we can perform an
+estimation of a linear combination of factor level means:
+
+$$
+L = \sum c_i \mu_{i \cdot}
+$$
+
+where the point estimate is $\hat{L} = `r l_hat`$ from the previous part, and
+the coefficients of the linear combination are:
+
+$$
+c_{\cdot} = \{`r coef`\}
+$$
+
+and the factor level means $\mu_{i \cdot}$ are the row-wise means of the table:
+
+$$
+\mu_{i \cdot} = \{`r a_means`\}
+$$
+
+The unbiased estimate of the standard deviation of the point estimate is:
+
+$$
+s[\hat{L}] = \sqrt{\frac{MSE}{bn} \sum c_i^2} = \sqrt{\frac{`r mse`}{`r b` \cdot `r n`}
+((`r coef[1]`)^2 + `r coef[2]`^2 + `r coef[3]`^2)} = `r stderr`
+$$
+
+and the critical t-value is:
+
+$$
+t(1 - \alpha / 2, (n - 1)ab) = t(1 - `r alpha / 2`, (`r n` - 1)`r a` \cdot `r b`) = `r t_crit`
+$$
+
+So the 95% confidence interval is:
+
+$$
+\hat{L} \pm t(1 - \alpha / 2, (n - 1)ab) s[\hat{L}]
+= `r l_hat` \pm `r t_crit` \cdot `r stderr` = (`r interval_lower`, `r interval_upper`)
+$$
+
+# Problem 4
+
+Below is an example of what the ANOVA table could look like for this experiment:
+
+![Partial ANOVA Table](./p4.png)
+
+## 4.a
+
+Fill in the ANOVA table.
+
+```{r}
+df <- c(a - 1, b - 1, (a - 1) * (b - 1), a * b * (n - 1), n * a * b - 1)
+ss <- c(4290.3, 12367.3, 23.2, 3833.7, 20514.5)
+msa <- ss[1] / (a - 1)
+msb <- ss[2] / (b - 1)
+msab <- ss[3] / ((a - 1) * (b - 1))
+mse <- ss[4] / (a * b * (n - 1))
+ms <- c(
+  msa,
+  msb,
+  msab,
+  mse,
+  NA
+)
+f <- c(msa / mse, msb / mse, msab / mse, NA, NA)
+p <- array()
+for (i in 1:5) {
+  p[i] <- ifelse(is.na(f[i]), NA, 1 - pf(f[i], df[i], df[4]))
+}
+
+source <- c("$A$", "$B$", "$A \\cdot B$", "Error", "Corrected Total")
+
+df_anova <- data.frame(source, df, ss, ms, f, p)
+colnames(df_anova) <- c("Source", "df", "SS", "MS", "$F$", "$p$-value")
+```
+
+Using the SS values provided as well as the previously calculated values from
+[Problem 3], the components of the table can be calculated as follows:
+
+### Degrees of Freedom
+
+$$
+\begin{aligned}
+df_A &= a - 1 = `r df[1]` \\
+df_B &= b - 1 = `r df[2]` \\
+df_{A \cdot B} &= (a - 1)(b - 1) = `r df[3]` \\
+df_{E} &= ab(n-1) = `r df[4]` \\
+df_{T} &= nab-1 = `r df[5]` \\
+\end{aligned}
+$$
+
+### Mean Square Values
+
+$$
+\begin{aligned}
+MSA &= \frac{SSA}{df_A}= \frac{`r ss[1]`}{`r df[1]`}= `r msa` \\
+MSB &= \frac{SSB}{df_B}= \frac{`r ss[2]`}{`r df[2]`}= `r msb` \\
+MSAB &= \frac{SSAB}{df_{A\cdot B}} = \frac{`r ss[3]`}{`r df[3]`}= `r msab` \\
+MSE &= \frac{SSE}{df_{E}}= \frac{`r ss[4]`}{`r df[4]`}= `r mse` \\
+\end{aligned}
+$$
+
+### $F$-values
+
+$$
+\begin{aligned}
+F^*_A &= \frac{MSA}{MSE}= \frac{`r msa`}{`r mse`}= `r f[1]` \\
+F^*_B &= \frac{MSB}{MSE}= \frac{`r msb`}{`r mse`}= `r f[2]` \\
+F^*_{A \cdot B} &= \frac{MSAB}{MSE}= \frac{`r msab`}{`r mse`}= `r f[3]` \\
+\end{aligned}
+$$
+
+
+### $p$-values
+
+$$
+\begin{aligned}
+p_A &= P\{ F(df_A, df_E) > F^*_A \} = 1 - `r pf(f[1], df[1], df[4])`
+= `r p[1]` \\
+p_B &= P\{ F(df_B, df_E) > F^*_B \} = 1 - `r pf(f[2], df[2], df[4])`
+= `r p[2]` \\
+p_{A \cdot B} &= P\{ F(df_{A \cdot B}, df_E) > F^*_{A \cdot B} \} = 1 - `r pf(f[3], df[3], df[4])`
+= `r p[3]` \\
+\end{aligned}
+$$
+
+### Completed Table
+
+Using the calculations above, the completed table is:
+
+```{r fig.cap="Complete ANOVA Table", echo=FALSE}
+library(knitr)
+kable(df_anova)
+```
+
+## 4.b
+
+Based on the information in the ANOVA table, does the interaction appear to be
+significant?
+
+
+Looking at the $A \cdot B$ row in the ANOVA table, which corresponds to the
+interaction effect between factors, $A$ and $B$, we observe a very low $F$-value
+of $`r f[3]`$ and a correspondingly high $p$-value of $`r p[3]`$, which means
+that the chances of observing an $F$-value this low by chance around 85%, so we
+would fail to reject the null hypothesis that the interaction effect is zero,
+and we conclude that **the interaction does not appear to be significant**.
