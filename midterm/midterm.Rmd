@@ -12,14 +12,36 @@ model_mlr <- lm(y ~ x1 + x2 + x3)
 anova_mlr <- anova(model_mlr)
 ```
 
-### Sum of squares terms
+### Residual
 
-Shouldn't need unless calculating SLR coefficients manually
+The order for the residual is $Y - \hat{Y}$
+
+### Sum of squares terms
 
 ```{r}
 ss_xy <- sum((x1 - mean(x1)) * (y - mean(y)))
 ss_xx <- sum((x1 - mean(x1))^2)
 ```
+
+### Manual Calculation of Parameters
+
+$$
+\begin{aligned}
+b_0 &= \bar{Y} - b_1 \bar{X} \\
+b_1 &= \frac{\sum(X_i - \bar{X})(Y_i - \bar{Y})}{\sum(X_i - \bar{X})^2} = \frac{SS_{XY}}{SS_X}
+\end{aligned}
+$$
+
+#### Interval on Parameters
+
+$$
+t^* = \frac{b_1 - \beta_1}{s[b_1]} \sim t(n-p)
+$$
+
+$$
+CI = b_1 \pm t(1 - \alpha / 2, n - p) s[b_1]
+$$
+
 
 ### SLR model summary
 
@@ -235,7 +257,7 @@ $\rho = 0, \beta_1 = 0$ but not for values other than $0$.
 
 ## Lack of Fit
 
-Requires replicates or grouping (see lecture 6 notes/HW2p3)
+Requires replicates or grouping (**see lecture 6 notes/HW2p3**)
 
 Note that $c$ is the number of unique $X$ values that we have.
 
@@ -248,7 +270,8 @@ anova(model_reduced, model_full)
 Here, SSE, SSPE are the first and second rows of `RSS` and SSLF is `Sum of Sq`.
 
 *NOTE* that the reduced and full models are flipped from what we typically think
-of.
+of: $H_0: E[Y] = \mu = \beta_0 + \beta_1 X$ and $H_a: E[Y] = \mu \ne \beta_0 +
+\beta_1 X$. So an $F$ higher than critical suggests a lack of fit in the model.
 
 We can also get SSPE, SSLF from
 
@@ -257,6 +280,20 @@ sse <- anova(model_reduced)["Residuals", "Sum Sq"]
 sspe <- anova(model_full)["Residuals", "Sum Sq"]
 sslf <- sse - sspe
 ```
+
+Or:
+
+$$
+\begin{aligned}
+df_R &= 1 \\
+df_E &= n - 2 \\
+df_{LF} &= c - 2 \\
+df_{PE} &= n - c \\
+df_{TO} &= n - 1 \\
+\end{aligned}
+$$
+
+where $c$ is the number of unique x-levels, $n$ is the total number of levels.
 
 ## F-values
 
@@ -313,7 +350,7 @@ Tests for heteroskedasticity by comparing variance between groups
 ```{r}
 library(ALSM)
 x_split <- median(x1)
-groups <- x < x_split
+groups <- x1 < x_split
 bf_results <- bftest(model_slr, groups)
 ```
 
@@ -338,6 +375,9 @@ library(MASS)
 boxcox(model_slr, lambda = seq(0, 10, by = 0.1))
 ```
 
+A $\lambda$ of $0$ indicates that a $lnY$ transformation is fitting, and
+$\lambda = 1$ indicates no transform is needed.
+
 ## Simultaneous Inference
 
 ### Parameters
@@ -353,14 +393,16 @@ ci.reg(model_slr, newdata = c(3, 4, 6), type = "b")
 
 Working-Hotelling:
 
+**Last slide of L12**
+
 ```{r}
 ci.reg(model_slr, newdata = c(3, 4, 6), type = "w")
 ```
 
 For joint estimation of the *parameters*, the Bonferroni interval is better when
-$n - p \ge 2$ because it yields a smaller critical value: $B = `r crit_bonf` <
-`r w` = W$. This is consistent across all models when we are estimating the
-parameters/weights/coefficients simultaneously for a linear model. That is, $W/B
-> 1$.
+$n - p \ge 2$ because it yields a smaller critical value: $B < W$. This is
+consistent across all models when we are estimating the
+parameters/weights/coefficients simultaneously for a linear model. That is,
+$W/B > 1$.
 
 

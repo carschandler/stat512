@@ -1,0 +1,284 @@
+```{r}
+rnd <- function(x) {
+  round(x, digits = 2)
+}
+```
+
+## 1
+
+```{r}
+xbar <- 4.5
+n <- 48
+ssx <- 500
+mse <- 1.5
+xh <- 2.3
+m <- 8
+spredmean <- sqrt(mse * (1 / m + 1 / n + (xh - xbar)^2 / ssx))
+alpha <- 0.05
+rnd(qt(1 - alpha / 2, n - 2) * spredmean * 2)
+```
+
+## 2
+
+```{r}
+msr <- 3000 / 1
+mse <- 17800 / 49
+rnd(msr / mse)
+```
+
+## 3
+
+B
+
+## 4
+
+D
+
+## 5
+
+```{r}
+xbar <- 26.7
+ybar <- 50
+ssx <- 2800
+ssxy <- 1600
+b1 <- ssxy / ssx
+rnd(b1)
+```
+
+## 6
+
+Closest to mean -> 27
+
+## 7
+
+SST = SSR + SSE
+
+## 8
+
+```{r}
+mse <- 2.5
+ssx <- 2300
+b1 <- 2.35
+n <- 50
+
+sx <- sqrt(mse / ssx)
+t_crit <- qt(1 - alpha / 2, n - 2)
+lower <- b1 - t_crit * sx
+upper <- b1 + t_crit * sx
+rnd(c(lower, upper))
+```
+
+## 9
+
+```{r}
+mse <- 1.2^2
+xbar <- 23
+ssx <- 48
+n <- 20
+
+t_crit <- qt(1 - alpha / 2, n - 2)
+xh <- 12
+m <- 1
+spred <- sqrt(mse * (1 / n + 1 + (xh - xbar)^2 / ssx))
+rnd(t_crit * spred)
+```
+
+## 10
+
+```{r}
+b0 <- 2.93
+b1 <- 0.55
+x <- 10
+y <- 6
+rnd(y - (b0 + b1 * x))
+```
+
+## 11
+
+High F corresponds to low p so would reject null hypothesis; lack of fit
+
+## 12
+
+```{r}
+x <- c(-0.85, -0.46, 0.25, 1.08, 1.37, 1.76, 2.59, 3.03)
+y <- c(0.45, 0.78, 1.25, 2.04, 3.89, 5.78, 13.99, 22.7)
+model <- lm(log(y) ~ x)
+rnd(model$coefficients)
+plot(model)
+```
+
+## 13
+
+Heteroskedascicity is present
+
+## 14
+
+qq plot
+
+## 15
+
+```{r}
+x <- c(0.15, 0.15, 0.23, 0.28, 0.28, 0.35, 0.35, 0.35)
+y <- c(20.5, 23.5, 40.3, 43.6, 44.8, 27.6, 25.4, 26.9)
+c_ <- length(unique(x))
+n <- length(x)
+model <- lm(y ~ x)
+model_reduced <- model
+model_full <- lm(y ~ as.factor(x))
+sse <- anova(model_reduced)["Residuals", "Sum Sq"]
+sspe <- anova(model_full)["Residuals", "Sum Sq"]
+dfpe <- anova(model_full)["Residuals", "Df"]
+sslf <- sse - sspe
+dflf <- anova(model_reduced, model_full)[2, "Df"]
+stopifnot(dfpe == n - c_)
+stopifnot(dflf == c_ - 2)
+rnd(sspe)
+rnd(sslf)
+rnd(dfpe)
+rnd(dflf)
+anova(model_reduced, model_full)
+```
+
+There is a lack of fit
+
+## 16
+
+Between A and C but I think the abs is misplaced on A
+
+## 17
+
+$\lambda = 0$ indicates log transform
+
+## 18
+
+```{r}
+r <- 0.97
+n <- 39
+t_star <- r * sqrt(n - 2) / sqrt(1 - r^2)
+rnd(t_star)
+```
+
+Inference on $\rho$ is equivalent to inference on $\beta_1$ when using $\rho =
+\beta_1 = 0$ as the hypothesis, but not otherwise.
+
+## 19
+
+Wanted to say C but not all power functions can be represented as logarithmic
+
+## 20
+
+```{r}
+n <- 40
+p <- 2
+c <- 10
+sse <- 120
+sslf <- 60
+sspe <- 80
+
+mslf <- sslf / (c - 2)
+mspe <- sspe / (n - c)
+
+f_star <- mslf / mspe
+rnd(f_star)
+```
+
+## 21
+
+$p = 4$, use $1 - alpha$
+
+## 22
+
+```{r}
+n <- 60
+p <- 2
+g <- 5
+rnd(sqrt(g * qf(1 - alpha, g, n - p)))
+```
+
+## 23
+
+```{r}
+n <- 60
+s_xi1_xi2 <- 0
+s_xi1 <- s_xi2 <- 0
+s_xi1_xi1 <- 20.5
+s_xi2_xi2 <- 50.6
+s_yi <- 200.6
+s_xi1_yi <- 42.7
+s_xi2_yi <- 101.8
+
+xtxinv <- matrix(
+  c(
+    n, s_xi1, s_xi2,
+    s_xi1, s_xi1_xi1, s_xi1_xi2,
+    s_xi2, s_xi1_xi2, s_xi2_xi2
+  ),
+  3,
+  3
+)
+
+xty <- matrix(c(s_yi, s_xi1_yi, s_xi2_yi), 3, 1)
+
+rnd(solve(xtxinv) %*% xty)
+```
+
+## 24
+
+```{r}
+n <- 50
+k <- 2
+bonf <- qt(1 - alpha / (2 * k), n - 2)
+wh <- sqrt(2 * qf(1 - alpha, 2, n - 2))
+rnd(bonf)
+rnd(wh)
+```
+
+## 25
+
+Global F can be used in MLR. It tests linear parameters against 0, without the
+intercept term.
+
+## 26
+
+```{r}
+b0 <- 1.06
+b1 <- 0.6
+b2 <- -0.33
+y <- 5
+x1 <- 2
+x2 <- 3
+
+rnd(y - (b0 + b1 * x1 + b2 * x2))
+```
+
+## 27
+
+iid; all 0 off-diagonal
+
+## 28
+
+BS question
+
+Apparently it is WH when k (<= p) is large though? Since the $1 - \alpha / (2k)$
+term increases towards 1 as $k$ increases, this means the critical Bonferroni
+will increase while WH remains the same.
+
+## 29
+
+```{r}
+k <- 2
+p <- 3
+n <- 50
+se <- 2.4
+bonf <- qt(1 - alpha / (2 * k), n - p)
+rnd(2 * bonf * se)
+```
+
+## 30
+
+100 rows for everything
+4 cols for design matrix
+
+## Results
+
+Missed 8 and 9
