@@ -1,0 +1,16 @@
+## MLR With Qualitative Predictors
+
+An input variable with $c$ classes will be respresented via $c - 1$ binary input
+variables (this is effectively one-hot encoding). When all of said inputs are
+$0$, this represents the *baseline* case, which we can choose arbitrarily. Then,
+each class is represented by making one of the variables $1$ and all the others
+$0$ (one is "hot").
+
+With this scheme, we effectively end up with $c$ regression models. The
+pseudo-variables going to $0$ causes certain terms to drop out and the
+pseudo-variable going to $1$ causes a term to be added to the intercept.
+
+If we have 2 inputs, $X1, X2$ where $X2$ is a pseudo-variable plot indicating
+one of two classes, we can plot $Y$ against $X1$ and leave the categorical
+variables off of the x-axis and instead just distinguishing between classes via
+a color, we can observe how a change in class affects the linear relationship
