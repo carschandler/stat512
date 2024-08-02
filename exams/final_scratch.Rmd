@@ -1,0 +1,26 @@
+
+
+## 4
+
+Multicollinearity because the second row is much smaller in both cases
+
+## 5 *
+
+$$
+R^2_{Y 3 | 1,2} = \frac{SSR(X_3 | X_1, X_2)}{SSE(X_1, X_2)}
+$$
+
+$$
+
+$$
+
+```{r}
+sse_x123 <- 600
+ssr_x3_x12 <- 250
+r_sq_3_12 <- ssr_x3_x12 / (ssr_x3_x12 + sse_x123)
+rnd(r_sq_3_12)
+```
+
+## 6
+
+Too easy?
