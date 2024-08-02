@@ -4,15 +4,12 @@
 
 Multicollinearity because the second row is much smaller in both cases
 
-## 5 *
+## 5 \*
 
 $$
 R^2_{Y 3 | 1,2} = \frac{SSR(X_3 | X_1, X_2)}{SSE(X_1, X_2)}
 $$
 
-$$
-
-$$
 
 ```{r}
 sse_x123 <- 600
@@ -21,6 +18,84 @@ r_sq_3_12 <- ssr_x3_x12 / (ssr_x3_x12 + sse_x123)
 rnd(r_sq_3_12)
 ```
 
-## 6
+## 6 \*
 
-Too easy?
+Too easy? CHECK IF TABLES ARE ACTUALLY TYPE I
+
+## 7
+
+Townhome: X2 = 1, X3 = 0
+
+$$
+\beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + 0
+$$
+
+## 8 * Semi-confident
+
+
+
+F = MSR / MSE
+= ((SSE_R - SSE_F) / (df_ER - df_EF))
+/ (SSE_F / df_EF)
+
+```{r}
+dfer <- 57
+dfef <- 55
+sser <- 4350
+ssef <- 4000
+(sser - ssef) / (dfer - dfef) / (ssef / dfef)
+```
+
+## 9
+
+Check picture
+
+## 10
+
+Very tough. Either all linear or X3 could be nonlinear.
+
+## 11
+
+```{r}
+n <- 250
+p <- 3
+dffits <- 2 * sqrt(p / n)
+cooks <- 0.50
+dfbetas <- 2 / sqrt(n)
+dffits
+cooks
+dfbetas
+```
+
+## 12
+
+Last is only one that uses indices right
+
+## 13
+
+Weird because the other does interact too but we're going with the one where
+they move in opposite directions because it is so clear (see pg 827 for a
+discussion in the book on this being an interaction of factors)
+
+## 14
+
+```{r}
+msr <- 250 / 4
+mse <- 500 / (99 - 4)
+msr / mse
+```
+
+## 15
+
+```{r}
+l_hat <- (30 + 35 + 15 + 45) / 4 - 20
+cs <- c(-1, 0.25, 0.25, 0.25, 0.25)
+n <- c(25, 35, 25, 40, 35)
+r <- 5
+stderr <- sqrt(25 * sum(cs^2 / n))
+t_crit <- qt(1 - alpha / 2, sum(n) - r)
+l_hat - stderr * t_crit
+l_hat + stderr * t_crit
+```
+
+
